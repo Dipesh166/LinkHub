@@ -121,7 +121,7 @@ export default function PreviewPanel({ onToggleView }: PreviewPanelProps) {
                   <SocialIcon 
                     key={index}
                     platform={handle.platform}
-                    username={handle.username}
+                    url={handle.url}
                     displayStyle="icon"
                   />
                 ))}

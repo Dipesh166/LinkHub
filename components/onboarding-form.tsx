@@ -90,7 +90,7 @@ export default function OnboardingForm() {
         ...formData,
         socialHandles: [
           ...formData.socialHandles,
-          { platform: "", username: "" },
+          { platform: "", url: "" },
         ],
       });
     }
@@ -354,7 +354,7 @@ export default function OnboardingForm() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <label className="text-sm font-medium text-gray-300">
-                          Social Media Handles
+                          Social Media Links
                         </label>
                         <span className="text-xs text-gray-400">
                           {formData.socialHandles.length}/5
@@ -365,77 +365,64 @@ export default function OnboardingForm() {
                         {formData.socialHandles.map((handle, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-2 group"
+                            className="flex flex-col gap-2 group"
                           >
-                            <Select
-                              value={handle.platform}
-                              onValueChange={(value) =>
-                                updateSocialHandle(index, "platform", value)
-                              }
-                            >
-                              <SelectTrigger className="bg-black/30 border-white/20 focus:ring-white/25 focus:border-white/40">
-                                <SelectValue placeholder="Platform" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-black/80 backdrop-blur-xl border-white/20">
-                                {socialPlatforms.map((platform) => (
-                                  <SelectItem
-                                    key={platform.id}
-                                    value={platform.id}
-                                  >
-                                    {platform.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={handle.platform}
+                                onValueChange={(value) =>
+                                  updateSocialHandle(index, "platform", value)
+                                }
+                              >
+                                <SelectTrigger className="bg-black/30 border-white/20 focus:ring-white/25 focus:border-white/40">
+                                  <SelectValue placeholder="Select Platform" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-black/80 backdrop-blur-xl border-white/20">
+                                  {socialPlatforms.map((platform) => (
+                                    <SelectItem
+                                      key={platform.id}
+                                      value={platform.id}
+                                    >
+                                      {platform.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
 
-                            <div className="relative flex-1">
-                              <Input
-                                value={handle.username}
-                                onChange={(e) =>
-                                  updateSocialHandle(
-                                    index,
-                                    "username",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder={
-                                  handle.platform
-                                    ? socialPlatforms.find(
-                                        (p) => p.id === handle.platform
-                                      )?.placeholder || "username"
-                                    : "username"
-                                }
-                                className="bg-black/30 border-white/20 text-white focus:ring-white/25 focus:border-white/40 pl-6"
-                              />
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
-                                @
-                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeSocialHandle(index)}
+                                className="text-red-500 hover:text-red-400 hover:bg-red-900/20"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
 
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeSocialHandle(index)}
-                              className="text-red-500 hover:text-red-400 hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            <Input
+                              value={handle.url}
+                              onChange={(e) =>
+                                updateSocialHandle(index, "url", e.target.value)
+                              }
+                              placeholder="Enter your profile URL"
+                              className="bg-black/30 border-white/20 text-white focus:ring-white/25 focus:border-white/40"
+                            />
                           </div>
                         ))}
-                      </div>
 
-                      {formData.socialHandles.length < 5 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addSocialHandle}
-                          className="w-full mt-2 border-dashed border-white/20 hover:border-white/40 text-gray-400 hover:text-white"
-                        >
-                          <Plus className="h-4 w-4 mr-2" /> Add Social Media
-                        </Button>
-                      )}
+                        {formData.socialHandles.length < 5 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={addSocialHandle}
+                            className="w-full bg-black/30 border-white/20 text-white hover:bg-white/10"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Social Media Link
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}

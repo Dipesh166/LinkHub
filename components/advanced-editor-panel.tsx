@@ -310,7 +310,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                         <div className="flex-1">
                           <div className="relative">
                             <Input
-                              value={handle.url || `https://${handle.platform}.com/${handle.username}`}
+                              value={handle.url}
                               className="bg-black/30 border-white/20 text-white pl-3"
                               readOnly
                             />
@@ -332,8 +332,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                               <SocialIcon
                                 key={index}
                                 platform={handle.platform}
-                                username={handle.username}
-                                url={handle.url || `https://${handle.platform}.com/${handle.username}`}
+                                url={handle.url}
                                 displayStyle="button"
                               />
                             ))

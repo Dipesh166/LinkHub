@@ -110,7 +110,7 @@ export default function PreviewPage({ params }: { params: PageParams }) {
               <SocialIcon 
                 key={index}
                 platform={handle.platform}
-                username={handle.username}
+                url={handle.url}
                 displayStyle="icon"
               />
             ))}
@@ -133,4 +133,3 @@ export default function PreviewPage({ params }: { params: PageParams }) {
     </div>
   )
 }
-

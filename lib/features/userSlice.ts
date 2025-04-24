@@ -29,8 +29,9 @@ export const socialPlatforms = [
 ]
 
 export interface SocialHandle {
-  platform: string
-  username: string
+  platform: string;
+  username?: string; // Make username optional
+  url: string;
 }
 
 interface UserState {
