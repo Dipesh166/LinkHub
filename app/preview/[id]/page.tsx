@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import { useRouter } from "next/navigation"
 import type { RootState } from "@/lib/store"
@@ -8,8 +8,8 @@ import Image from "next/image"
 import LinkButton from "@/components/link-button"
 import { motion } from "framer-motion"
 import { gradients } from "@/lib/features/themeSlice"
-import { use } from 'react'
 import SocialIcon from "@/components/social-icon"
+import { use } from 'react'
 
 interface PageParams {
   id: string;
@@ -17,20 +17,34 @@ interface PageParams {
 
 export default function PreviewPage({ params }: { params: PageParams }) {
   const router = useRouter()
+  const [isClient, setIsClient] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { username, bio, profession, profileImage, socialHandles } = useSelector((state: RootState) => state.user)
   const links = useSelector((state: RootState) => state.links)
   const theme = useSelector((state: RootState) => state.theme)
   const generatedLink = useSelector((state: RootState) => state.modal.generatedLink)
   
-  // Unwrap params using React.use()
+  // Properly unwrap params using React.use()
   const { id } = use(params as Promise<PageParams>)
 
   useEffect(() => {
-    // Redirect if the UUID doesn't match or no username
-    if ((!generatedLink || id !== generatedLink) && !username) {
-      router.push("/")
-    }
+    setIsClient(true)
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+      if ((!generatedLink || id !== generatedLink) && !username) {
+        router.push("/")
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [generatedLink, id, router, username])
+
+  if (!isClient || isLoading) {
+    return (
+      <>
+      </>
+    )
+  }
 
   const getBackgroundStyle = () => {
     if (theme.background === "image" && theme.backgroundImage) {

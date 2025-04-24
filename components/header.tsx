@@ -4,20 +4,31 @@ import { useDispatch, useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import { toggleModal, setGeneratedLink } from "@/lib/features/modalSlice"
 import { Button } from "@/components/ui/button"
-import { Link2 } from "lucide-react"
+
+import { Link2, LogOut } from "lucide-react"
 import { v4 as uuidv4 } from "uuid"
 import { motion } from "framer-motion"
+import { useAuth } from "@/lib/AuthContext"
 
 export default function Header() {
   const dispatch = useDispatch()
   const username = useSelector((state: RootState) => state.user.username)
   const onboardingComplete = useSelector((state: RootState) => state.user.onboardingComplete)
+  const { user, logout } = useAuth()
 
   const handleGenerateLink = () => {
     if (username) {
       const uuid = uuidv4()
       dispatch(setGeneratedLink(uuid))
       dispatch(toggleModal())
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout failed:', error)
     }
   }
 
@@ -38,20 +49,42 @@ export default function Header() {
           LinkHub
         </motion.div>
 
-        {username && onboardingComplete && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-          >
-            <Button
-              onClick={handleGenerateLink}
-              className="bg-white text-black hover:bg-gray-200 rounded-full font-medium"
+        <div className="flex items-center gap-4">
+          {user && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-sm text-gray-400"
             >
-              <Link2 className="mr-2 h-4 w-4" /> Generate Link
-            </Button>
-          </motion.div>
-        )}
+              {user.email}
+            </motion.div>
+          )}
+
+          {username && onboardingComplete && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+              className="flex items-center gap-2"
+            >
+              <Button
+                onClick={handleGenerateLink}
+                className="bg-white text-black hover:bg-gray-200 rounded-full font-medium"
+              >
+                <Link2 className="mr-2 h-4 w-4" /> Generate Link
+              </Button>
+
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-white"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          )}
+        </div>
       </div>
     </motion.header>
   )
