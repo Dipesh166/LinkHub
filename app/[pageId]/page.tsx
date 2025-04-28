@@ -11,7 +11,6 @@ import { getPublicPage } from "@/lib/services/firebase-service"
 import type { UserData } from "@/lib/services/firebase-service"
 import { useAuth } from "@/lib/AuthContext"
 import { use } from 'react'
-import { LogOut } from "lucide-react"
 
 interface PageParams {
   pageId: string
@@ -21,20 +20,11 @@ type GradientStyle = keyof typeof gradients
 
 export default function Page({ params }: { params: PageParams | Promise<PageParams> }) {
   const router = useRouter()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [pageData, setPageData] = useState<UserData | null>(null)
   const [error, setError] = useState<string | null>(null)
   
-  const handleLogout = async () => {
-    try {
-      await logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout failed:', error)
-    }
-  }
-
   // Properly unwrap params using React.use()
   const { pageId } = use(params as Promise<PageParams>)
 
@@ -121,20 +111,6 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
 
   return (
     <div className="min-h-screen flex flex-col items-center p-6" style={getBackgroundStyle()}>
-      {/* Logout Button */}
-      {user && (
-        <motion.button
-          className="fixed top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-20"
-          onClick={handleLogout}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          title="Logout"
-        >
-          <LogOut className="h-5 w-5 text-white" />
-        </motion.button>
-      )}
-
       {/* Background overlay for image backgrounds */}
       {pageData.theme.background === "image" && pageData.theme.backgroundImage && (
         <div 

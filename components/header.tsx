@@ -2,13 +2,14 @@
 
 import { useDispatch, useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
-import { toggleModal, setGeneratedLink } from "@/lib/features/modalSlice"
+import { addLink } from "@/lib/features/linksSlice"
+import { toggleModal } from "@/lib/features/modalSlice"
 import { Button } from "@/components/ui/button"
 import { Link2, LogOut } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/lib/AuthContext"
 import { useRouter } from "next/navigation"
-import { saveLinks } from "@/lib/services/firebase-service"
+import { v4 as uuidv4 } from "uuid"
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -20,20 +21,15 @@ export default function Header() {
 
   const handleGenerateLink = async () => {
     if (username && user) {
-      try {
-        // Save current theme state with the link
-        await saveLinks(user.uid, [{
-          id: user.uid,
-          title: `${username}'s LinkHub`,
-          url: `${window.location.origin}/preview/${user.uid}`,
-        }])
-        
-        // Set the generated link to the user's ID for preview
-        dispatch(setGeneratedLink(user.uid))
-        dispatch(toggleModal())
-      } catch (error) {
-        console.error("Failed to save link:", error)
-      }
+      const linkData = {
+        id: uuidv4(),
+        title: `${username}'s LinkHub`,
+        url: `${window.location.origin}/preview/${user.uid}`,
+      };
+
+      // Add link to Redux store, which will trigger save to Firebase through editor panel
+      dispatch(addLink(linkData));
+      dispatch(toggleModal());
     }
   }
 

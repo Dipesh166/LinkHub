@@ -34,7 +34,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { SocialIcon } from "@/components/social-icon"
 import { useAuth } from "@/lib/AuthContext"
 import { updateProfile } from "@/lib/features/userSlice"
-import { saveTheme } from "@/lib/services/firebase-service"
+import { saveTheme, saveLinks } from "@/lib/services/firebase-service"
 
 interface AdvancedEditorPanelProps {
   onToggleView?: () => void
@@ -70,16 +70,25 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     setUserBio(bio)
   }, [bio])
 
-  const handleAddLink = () => {
-    if (newLink.title && newLink.url && links.length < 10) {
-      dispatch(
-        addLink({
-          id: uuidv4(),
-          title: newLink.title,
-          url: newLink.url.startsWith("http") ? newLink.url : `https://${newLink.url}`,
-        }),
-      )
+  const handleAddLink = async () => {
+    if (newLink.title && newLink.url && links.length < 10 && user) {
+      const newLinkData = {
+        id: uuidv4(), // Generate a unique ID for the link
+        title: newLink.title,
+        url: newLink.url.startsWith("http") ? newLink.url : `https://${newLink.url}`,
+      }
+
+      // Update Redux state
+      dispatch(addLink(newLinkData))
       setNewLink({ title: "", url: "" })
+
+      // Save to Firebase
+      try {
+        const updatedLinks = [...links, newLinkData]
+        await saveLinks(user.uid, updatedLinks)
+      } catch (error) {
+        console.error('Error saving links:', error)
+      }
     }
   }
 
@@ -196,6 +205,21 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     };
     reader.readAsDataURL(file);
   };
+
+  // Add useEffect to sync links with Firebase whenever they change
+  useEffect(() => {
+    const syncLinksWithFirebase = async () => {
+      if (user && user.uid && links) {
+        try {
+          await saveLinks(user.uid, links);
+        } catch (error) {
+          console.error('Error syncing links with Firebase:', error);
+        }
+      }
+    };
+
+    syncLinksWithFirebase();
+  }, [user, links]);
 
   return (
     <div className="w-full max-w-xl mx-auto space-y-6 p-4">
