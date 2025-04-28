@@ -2,34 +2,24 @@
 
 import { useDispatch, useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
-import { addLink } from "@/lib/features/linksSlice"
 import { toggleModal } from "@/lib/features/modalSlice"
 import { Button } from "@/components/ui/button"
 import { Link2, LogOut } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/lib/AuthContext"
 import { useRouter } from "next/navigation"
-import { v4 as uuidv4 } from "uuid"
 
 export default function Header() {
   const dispatch = useDispatch()
   const username = useSelector((state: RootState) => state.user.username)
   const onboardingComplete = useSelector((state: RootState) => state.user.onboardingComplete)
-  const theme = useSelector((state: RootState) => state.theme)
   const { user, logout } = useAuth()
   const router = useRouter()
 
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = () => {
     if (username && user) {
-      const linkData = {
-        id: uuidv4(),
-        title: `${username}'s LinkHub`,
-        url: `${window.location.origin}/preview/${user.uid}`,
-      };
-
-      // Add link to Redux store, which will trigger save to Firebase through editor panel
-      dispatch(addLink(linkData));
-      dispatch(toggleModal());
+      // Just open the modal to show the preview link without storing it
+      dispatch(toggleModal())
     }
   }
 
