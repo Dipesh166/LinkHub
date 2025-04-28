@@ -21,7 +21,7 @@ export default function LinkGeneratorModal() {
 
   const getShareableLink = () => {
     if (!user) return '';
-    return `http://192.168.1.84:3000/${user.uid}`;
+    return `http://192.168.1.71:3000/${user.uid}`;
   };
 
   const handlePreviewOpen = () => {
@@ -185,14 +185,20 @@ export default function LinkGeneratorModal() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="relative group"
+              className="relative"
             >
-              <div className="absolute -inset-2 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg opacity-0 group-hover:opacity-100 blur transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-black p-4 rounded-lg">
+              <div className="relative bg-black p-6 rounded-lg flex items-center justify-center">
                 <QRCode
                   value={getShareableLink()}
                   size={200}
-                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  level="M"
+                  fgColor="#fff"
+                  bgColor="transparent"
+                  style={{
+                    height: "auto",
+                    maxWidth: "100%",
+                    width: "100%"
+                  }}
                   viewBox="0 0 256 256"
                 />
               </div>
