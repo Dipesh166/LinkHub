@@ -4,31 +4,35 @@ import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import { toggleModal } from "@/lib/features/modalSlice"
-import { addSavedLink } from "@/lib/features/userSlice"
 import { Button } from "@/components/ui/button"
 import { Copy, Check, X, ExternalLink } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/lib/AuthContext"
 
 export default function LinkGeneratorModal() {
   const dispatch = useDispatch()
   const generatedLink = useSelector((state: RootState) => state.modal.generatedLink)
-  const username = useSelector((state: RootState) => state.user.username)
+  const { user } = useAuth()
   const [copied, setCopied] = useState(false)
 
-  const fullLink = `${window.location.origin}/preview/${username}`
+  const fullLink = user ? `${window.location.origin}/preview/${user.uid}` : ""
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(fullLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (fullLink) {
+      navigator.clipboard.writeText(fullLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   const handleClose = () => {
-    // Save the link to the user's saved links
-    if (generatedLink && username) {
-      dispatch(addSavedLink({ id: generatedLink, username }))
-    }
     dispatch(toggleModal())
+  }
+
+  const handleOpenPreview = () => {
+    if (user) {
+      window.open(`/preview/${user.uid}`, "_blank")
+    }
   }
 
   return (
@@ -54,7 +58,11 @@ export default function LinkGeneratorModal() {
             <X className="h-5 w-5" />
           </Button>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.1 }}
+          >
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Your Shareable Link
             </h2>
@@ -82,10 +90,14 @@ export default function LinkGeneratorModal() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.3 }}
+          >
             <Button
               className="w-full bg-white text-black hover:bg-gray-200 rounded-full font-medium"
-              onClick={() => window.open(`/preview/${username}`, "_blank")}
+              onClick={handleOpenPreview}
             >
               <ExternalLink className="mr-2 h-4 w-4" /> Open Preview
             </Button>

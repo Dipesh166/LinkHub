@@ -1,6 +1,7 @@
 "use client"
 
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import { saveUserProfile, saveLinks, saveTheme, UserData, LinkData, ThemeData } from '../services/firebase-service';
 
 export const professions = [
   "Software Developer",
@@ -107,6 +108,13 @@ export const userSlice = createSlice({
       state.onboardingComplete = true
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(updateProfile.fulfilled, (state, action) => {
+      // Merge the updated fields into the state
+      Object.assign(state, action.payload);
+    });
+    // You can add similar handlers for updateLinks and updateTheme if needed
+  }
 })
 
 export const {
@@ -124,3 +132,31 @@ export const {
 } = userSlice.actions
 
 export default userSlice.reducer
+
+// REMOVE THE DUPLICATE IMPORTS BELOW
+// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// import { saveUserProfile, saveLinks, saveTheme, UserData, LinkData, ThemeData } from '../services/firebase-service';
+
+export const updateProfile = createAsyncThunk(
+  'user/updateProfile',
+  async ({ userId, data }: { userId: string; data: Partial<UserData> }) => {
+    await saveUserProfile(userId, data);
+    return data;
+  }
+);
+
+export const updateLinks = createAsyncThunk(
+  'links/updateLinks',
+  async ({ userId, links }: { userId: string; links: LinkData[] }) => {
+    await saveLinks(userId, links);
+    return links;
+  }
+);
+
+export const updateTheme = createAsyncThunk(
+  'theme/updateTheme',
+  async ({ userId, theme }: { userId: string; theme: ThemeData }) => {
+    await saveTheme(userId, theme);
+    return theme;
+  }
+);

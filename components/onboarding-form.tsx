@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassButton } from "@/components/ui/glass-button";
+import { useAuth } from "@/lib/AuthContext";
+import { saveUserProfile } from "@/lib/services/firebase-service";
 
 export default function OnboardingForm() {
   const dispatch = useDispatch();
@@ -56,7 +58,9 @@ export default function OnboardingForm() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { user } = useAuth(); // Get the authenticated user
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.username.trim() && formData.profession) {
       dispatch(
@@ -67,6 +71,15 @@ export default function OnboardingForm() {
           socialHandles: formData.socialHandles,
         })
       );
+      // Save to Firebase if user is authenticated
+      if (user && user.uid) {
+        await saveUserProfile(user.uid, {
+          username: formData.username.trim(),
+          bio: formData.bio.trim(),
+          profession: formData.profession,
+          socialHandles: formData.socialHandles,
+        });
+      }
     }
   };
 

@@ -32,6 +32,33 @@ export default function HomePage() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // Define features array here so it's accessible throughout the component
+  const features = [
+    {
+      icon: <Link className="h-6 w-6 text-purple-400" />,
+      title: "Custom Links",
+      description:
+        "Add up to 10 custom links to your profile with beautiful animations and styles.",
+    },
+    {
+      icon: <Palette className="h-6 w-6 text-blue-400" />,
+      title: "Beautiful Themes",
+      description:
+        "Choose from a variety of gradients or upload your own background image.",
+    },
+    {
+      icon: <Globe className="h-6 w-6 text-green-400" />,
+      title: "Social Media Integration",
+      description: "Connect your social media profiles with just a username.",
+    },
+    {
+      icon: <Sparkles className="h-6 w-6 text-amber-400" />,
+      title: "Glassmorphism UI",
+      description:
+        "Modern glass-like interface with blur effects and transparency.",
+    },
+  ];
+
   useEffect(() => {
     setIsLoaded(true);
   }, []);

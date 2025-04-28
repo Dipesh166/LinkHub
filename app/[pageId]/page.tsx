@@ -11,27 +11,37 @@ import { getPublicPage } from "@/lib/services/firebase-service"
 import type { UserData } from "@/lib/services/firebase-service"
 import { useAuth } from "@/lib/AuthContext"
 import { use } from 'react'
+import { LogOut } from "lucide-react"
 
 interface PageParams {
-  id: string
+  pageId: string
 }
 
 type GradientStyle = keyof typeof gradients
 
-export default function PreviewPage({ params }: { params: PageParams | Promise<PageParams> }) {
+export default function Page({ params }: { params: PageParams | Promise<PageParams> }) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [pageData, setPageData] = useState<UserData | null>(null)
   const [error, setError] = useState<string | null>(null)
   
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
+
   // Properly unwrap params using React.use()
-  const { id } = use(params as Promise<PageParams>)
+  const { pageId } = use(params as Promise<PageParams>)
 
   useEffect(() => {
     const fetchPageData = async () => {
       try {
-        const data = await getPublicPage(id)
+        const data = await getPublicPage(pageId)
         if (data) {
           setPageData(data)
         } else {
@@ -49,7 +59,7 @@ export default function PreviewPage({ params }: { params: PageParams | Promise<P
     }
 
     fetchPageData()
-  }, [id, router])
+  }, [pageId, router])
 
   // Show loading spinner while data is being fetched
   if (isLoading) {
@@ -111,6 +121,20 @@ export default function PreviewPage({ params }: { params: PageParams | Promise<P
 
   return (
     <div className="min-h-screen flex flex-col items-center p-6" style={getBackgroundStyle()}>
+      {/* Logout Button */}
+      {user && (
+        <motion.button
+          className="fixed top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-20"
+          onClick={handleLogout}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          title="Logout"
+        >
+          <LogOut className="h-5 w-5 text-white" />
+        </motion.button>
+      )}
+
       {/* Background overlay for image backgrounds */}
       {pageData.theme.background === "image" && pageData.theme.backgroundImage && (
         <div 
@@ -167,7 +191,7 @@ export default function PreviewPage({ params }: { params: PageParams | Promise<P
               <SocialIcon
                 key={index}
                 platform={handle.platform}
-                username={handle.url} // handle.url contains the username value
+                username={handle.url}
                 displayStyle="icon"
               />
             ))}
@@ -187,23 +211,6 @@ export default function PreviewPage({ params }: { params: PageParams | Promise<P
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Edit button (only shown to the owner) */}
-        {user && user.uid === id && (
-          <motion.div 
-            className="mt-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <button
-              onClick={() => router.push("/")}
-              className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm font-medium transition-colors"
-            >
-              Edit Page
-            </button>
-          </motion.div>
-        )}
       </motion.div>
     </div>
   )

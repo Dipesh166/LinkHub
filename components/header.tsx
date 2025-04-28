@@ -4,32 +4,50 @@ import { useDispatch, useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import { toggleModal, setGeneratedLink } from "@/lib/features/modalSlice"
 import { Button } from "@/components/ui/button"
-
 import { Link2, LogOut } from "lucide-react"
-import { v4 as uuidv4 } from "uuid"
 import { motion } from "framer-motion"
 import { useAuth } from "@/lib/AuthContext"
+import { useRouter } from "next/navigation"
+import { saveLinks } from "@/lib/services/firebase-service"
 
 export default function Header() {
   const dispatch = useDispatch()
   const username = useSelector((state: RootState) => state.user.username)
   const onboardingComplete = useSelector((state: RootState) => state.user.onboardingComplete)
+  const theme = useSelector((state: RootState) => state.theme)
   const { user, logout } = useAuth()
+  const router = useRouter()
 
-  const handleGenerateLink = () => {
-    if (username) {
-      const uuid = uuidv4()
-      dispatch(setGeneratedLink(uuid))
-      dispatch(toggleModal())
+  const handleGenerateLink = async () => {
+    if (username && user) {
+      try {
+        // Save current theme state with the link
+        await saveLinks(user.uid, [{
+          id: user.uid,
+          title: `${username}'s LinkHub`,
+          url: `${window.location.origin}/preview/${user.uid}`,
+        }])
+        
+        // Set the generated link to the user's ID for preview
+        dispatch(setGeneratedLink(user.uid))
+        dispatch(toggleModal())
+      } catch (error) {
+        console.error("Failed to save link:", error)
+      }
     }
   }
 
   const handleLogout = async () => {
     try {
       await logout()
+      router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)
     }
+  }
+
+  const navigateToHome = () => {
+    router.push('/')
   }
 
   return (
@@ -41,10 +59,11 @@ export default function Header() {
     >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <motion.div
-          className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+          className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent cursor-pointer"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
+          onClick={navigateToHome}
         >
           LinkHub
         </motion.div>

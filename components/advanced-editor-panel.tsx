@@ -15,7 +15,10 @@ import {
   gradients,
   cardStyles,
 } from "@/lib/features/themeSlice"
+import { setProfession, socialPlatforms } from "@/lib/features/userSlice"
 import { v4 as uuidv4 } from "uuid"
+import { AlertCircle, CreditCard, Eye, Link, Palette, Plus, Trash2, User } from "lucide-react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -25,28 +28,43 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Trash2, Plus, AlertCircle, Link, Palette, User, ImageIcon, Eye, CreditCard } from "lucide-react"
-import { setProfileImage, setBio, setProfession, professions, socialPlatforms } from "@/lib/features/userSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { motion } from "framer-motion"
-import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
-import SocialIcon from "@/components/social-icon"
+import { GlassCard } from "@/components/ui/glass-card"
+import { SocialIcon } from "@/components/social-icon"
+import { useAuth } from "@/lib/AuthContext"
+import { updateProfile } from "@/lib/features/userSlice"
+import { saveTheme } from "@/lib/services/firebase-service"
 
 interface AdvancedEditorPanelProps {
   onToggleView?: () => void
 }
 
+const professions = [
+  "Software Developer",
+  "Designer",
+  "Content Creator",
+  "Photographer",
+  "Artist",
+  "Musician",
+  "Writer",
+  "Entrepreneur",
+  "Marketing Professional",
+  "Student",
+  "Other"
+];
+
 export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPanelProps) {
+  const { user } = useAuth();
   const dispatch = useDispatch()
   const links = useSelector((state: RootState) => state.links)
   const theme = useSelector((state: RootState) => state.theme)
-  const { username, bio, profession, socialHandles } = useSelector((state: RootState) => state.user)
+  const { username, bio, profession, socialHandles, profileImage } = useSelector((state: RootState) => state.user)
 
   const [newLink, setNewLink] = useState({ title: "", url: "" })
   const [userBio, setUserBio] = useState(bio)
   const [activeTab, setActiveTab] = useState("profile")
-  const [dragOver, setDragOver] = useState(false)
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     setUserBio(bio)
@@ -74,54 +92,16 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
   }
 
   const handleThemeChange = (key: keyof typeof theme, value: string | number | boolean) => {
-    dispatch(updateTheme({ [key]: value }))
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "profile" | "background") => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          if (type === "profile") {
-            dispatch(setProfileImage(event.target.result as string))
-          } else {
-            dispatch(setBackgroundImage(event.target.result as string))
-          }
-        }
-      }
-      reader.readAsDataURL(file)
+    const updatedTheme = { ...theme, [key]: value };
+    dispatch(updateTheme(updatedTheme));
+    
+    // Save theme to Firestore
+    if (user && user.uid) {
+      saveTheme(user.uid, updatedTheme)
+        .catch(error => console.error('Error saving theme:', error));
     }
-  }
+  };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = () => {
-    setDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent, type: "profile" | "background") => {
-    e.preventDefault()
-    setDragOver(false)
-
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          if (type === "profile") {
-            dispatch(setProfileImage(event.target.result as string))
-          } else {
-            dispatch(setBackgroundImage(event.target.result as string))
-          }
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
   const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
@@ -130,12 +110,19 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     }
   }
 
-  const handleBioSave = () => {
-    dispatch(setBio(userBio))
-  }
+  const handleBioSave = async () => {
+    if (user) {
+      await dispatch(updateProfile({
+        userId: user.uid,
+        data: { bio: userBio }
+      }));
+    }
+  };
 
   const handleProfessionChange = (value: string) => {
-    dispatch(setProfession(value))
+    if (user?.uid) {
+      dispatch(setProfession(value));
+    }
   }
 
   const handleOpacityChange = (value: number[]) => {
@@ -176,6 +163,40 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     show: { opacity: 1, y: 0 },
   }
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent, type: "profile" | "background") => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      if (type === "profile" && user?.uid) {
+        dispatch(updateProfile({
+          userId: user.uid,
+          data: { profileImage: dataUrl }
+        }));
+      } else if (type === "background") {
+        dispatch(updateTheme({ backgroundImage: dataUrl }));
+        if (user?.uid) {
+          saveTheme(user.uid, { ...theme, backgroundImage: dataUrl });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="w-full max-w-xl mx-auto space-y-6 p-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -211,35 +232,38 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                   <CardTitle className="text-xl">Profile Image</CardTitle>
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
-                  <div
-                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                      dragOver ? "border-white bg-white/10" : "border-white/20 hover:border-white/40"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, "profile")}
-                  >
-                    {theme.profileImage ? (
-                      <div className="flex flex-col items-center">
+                  <div className="space-y-4">
+                    <Label htmlFor="profileImageUrl" className="text-sm">
+                      Profile Image URL
+                    </Label>
+                    <Input
+                      id="profileImageUrl"
+                      type="text"
+                      placeholder="https://example.com/your-image.jpg"
+                      value={profileImage || ""}
+                      onChange={e => {
+                        const url = e.target.value;
+                        if (user && user.uid) {
+                          dispatch(updateProfile({
+                            userId: user.uid,
+                            data: { profileImage: url }
+                          }));
+                        }
+                      }}
+                      className="bg-black/30 border-white/20 text-white"
+                    />
+                    {profileImage && (
+                      <div className="flex flex-col items-center mt-4">
                         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 mb-4">
                           <img
-                            src={theme.profileImage || "/placeholder.svg"}
+                            src={profileImage}
                             alt="Profile"
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <p className="text-gray-400 mb-2">Drag & drop to replace</p>
+                        <p className="text-gray-400 mb-2">Preview</p>
                       </div>
-                    ) : (
-                      <p className="text-gray-400 mb-4">Drag & drop your profile image here</p>
                     )}
-                    <Input
-                      id="profileImage"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, "profile")}
-                      className="bg-black/30 border-white/20 text-white"
-                    />
                   </div>
                 </CardContent>
               </GlassCard>
@@ -551,35 +575,37 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
 
                   {theme.background === "image" && (
                     <div className="space-y-4">
-                      <GlassButton
-                        className="w-full h-20 border-dashed border-2 border-white/20 hover:border-white/40 flex flex-col items-center justify-center gap-2"
-                        onClick={() => document.getElementById("backgroundImageUpload")?.click()}
-                      >
-                        <div className="flex items-center justify-center">
-                          <ImageIcon className="mr-2 h-5 w-5" />
-                          Upload Background Image
-                        </div>
-                        <p className="text-xs text-gray-400">Click to select or drag and drop</p>
-                      </GlassButton>
+                      <Label htmlFor="backgroundImageUrl" className="text-sm">
+                        Background Image URL
+                      </Label>
                       <Input
-                        id="backgroundImageUpload"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, "background")}
-                        className="hidden"
+                        id="backgroundImageUrl"
+                        type="text"
+                        placeholder="https://example.com/background.jpg"
+                        value={theme.backgroundImage || ""}
+                        onChange={e => {
+                          const url = e.target.value;
+                          dispatch(updateTheme({
+                            backgroundImage: url
+                          }));
+                          if (user && user.uid) {
+                            saveTheme(user.uid, { ...theme, backgroundImage: url });
+                          }
+                        }}
+                        className="bg-black/30 border-white/20 text-white"
                       />
-
-                      <div
-                        className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${
-                          dragOver ? "border-white bg-white/10" : "border-white/20 hover:border-white/40"
-                        }`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, "background")}
-                      >
-                        <p className="text-gray-400 mb-2">Or drag & drop your image here</p>
-                      </div>
-
+                      {theme.backgroundImage && (
+                        <div className="flex flex-col items-center mt-4">
+                          <div className="w-32 h-20 rounded-lg overflow-hidden border-2 border-white/20 mb-4">
+                            <img
+                              src={theme.backgroundImage}
+                              alt="Background"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <p className="text-gray-400 mb-2">Preview</p>
+                        </div>
+                      )}
                       {theme.backgroundImage && (
                         <div className="space-y-4 mt-4">
                           <div className="space-y-2">
