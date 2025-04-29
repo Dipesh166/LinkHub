@@ -17,16 +17,27 @@ export default function LinkGeneratorModal() {
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if window is available
+  const isWindowAvailable = () => {
+    return typeof window !== 'undefined';
+  };
+
   if (!isOpen || !user) return null;
 
   const getShareableLink = () => {
     if (!user) return '';
-    return `http://192.168.1.71:3000/${user.uid}`;
+    if (!isWindowAvailable()) return '';
+    
+    const protocol = window.location.protocol;
+    const hostname = window.location.host;
+    return `${protocol}//${hostname}/${user.uid}`;
   };
 
   const handlePreviewOpen = () => {
     setIsLoading(true);
-    window.open(getShareableLink(), '_blank');
+    if (isWindowAvailable()) {
+      window.open(getShareableLink(), '_blank');
+    }
     setTimeout(() => setIsLoading(false), 1000);
   };
 
@@ -41,6 +52,7 @@ export default function LinkGeneratorModal() {
   };
 
   const handleShare = (platform: string) => {
+    if (!isWindowAvailable()) return;
     const url = getShareableLink();
     const text = "Check out my LinkHub page!";
     
