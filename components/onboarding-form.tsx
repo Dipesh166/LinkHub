@@ -418,7 +418,7 @@ export default function OnboardingForm() {
                               onChange={(e) =>
                                 updateSocialHandle(index, "url", e.target.value)
                               }
-                              placeholder="Enter your profile URL"
+                              placeholder="Enter your username"
                               className="bg-black/30 border-white/20 text-white focus:ring-white/25 focus:border-white/40"
                             />
                           </div>
