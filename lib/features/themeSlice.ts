@@ -30,6 +30,7 @@ export const cardStyles = {
 interface ThemeState {
   background: string
   backgroundImage: string | null
+  backgroundImageId: string | null
   gradientStyle: keyof typeof gradients
   buttonStyle: string
   cardStyle: keyof typeof cardStyles
@@ -47,6 +48,7 @@ interface ThemeState {
 const initialState: ThemeState = {
   background: "solid",
   backgroundImage: null,
+  backgroundImageId: null,
   gradientStyle: "midnight",
   buttonStyle: "rounded",
   cardStyle: "glass",

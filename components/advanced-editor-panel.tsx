@@ -257,25 +257,51 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
                   <div className="space-y-4">
-                    <Label htmlFor="profileImageUrl" className="text-sm">
-                      Profile Image URL
-                    </Label>
-                    <Input
-                      id="profileImageUrl"
-                      type="text"
-                      placeholder="https://example.com/your-image.jpg"
-                      value={profileImage || ""}
-                      onChange={e => {
-                        const url = e.target.value;
-                        if (user && user.uid) {
-                          dispatch(updateProfile({
-                            userId: user.uid,
-                            data: { profileImage: url }
-                          }));
-                        }
-                      }}
-                      className="bg-black/30 border-white/20 text-white"
-                    />
+                    <div
+                      className="w-full h-24 bg-black/30 border border-white/20 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors relative overflow-hidden"
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, "profile")}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file && user?.uid) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const dataUrl = event.target?.result as string;
+                              dispatch(updateProfile({
+                                userId: user.uid,
+                                data: { profileImage: dataUrl }
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <div className="flex flex-col items-center justify-center pointer-events-none">
+                        <svg
+                          className="w-8 h-8 text-gray-400 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <p className="text-sm text-gray-400">
+                          {dragOver ? "Drop image here" : "Click or drag image here"}
+                        </p>
+                      </div>
+                    </div>
+                  
                     {profileImage && (
                       <div className="flex flex-col items-center mt-4">
                         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 mb-4">
@@ -599,25 +625,50 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
 
                   {theme.background === "image" && (
                     <div className="space-y-4">
-                      <Label htmlFor="backgroundImageUrl" className="text-sm">
-                        Background Image URL
-                      </Label>
-                      <Input
-                        id="backgroundImageUrl"
-                        type="text"
-                        placeholder="https://example.com/background.jpg"
-                        value={theme.backgroundImage || ""}
-                        onChange={e => {
-                          const url = e.target.value;
-                          dispatch(updateTheme({
-                            backgroundImage: url
-                          }));
-                          if (user && user.uid) {
-                            saveTheme(user.uid, { ...theme, backgroundImage: url });
-                          }
-                        }}
-                        className="bg-black/30 border-white/20 text-white"
-                      />
+                      <div
+                        className="w-full h-24 bg-black/30 border border-white/20 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors relative overflow-hidden"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, "background")}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file && file.type.startsWith("image/")) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const dataUrl = event.target?.result as string;
+                                dispatch(updateTheme({ backgroundImage: dataUrl }));
+                                if (user && user.uid) {
+                                  saveTheme(user.uid, { ...theme, backgroundImage: dataUrl });
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <div className="flex flex-col items-center justify-center pointer-events-none">
+                          <svg
+                            className="w-8 h-8 text-gray-400 mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <p className="text-sm text-gray-400">
+                            {dragOver ? "Drop image here" : "Click or drag image here"}
+                          </p>
+                        </div>
+                      </div>
                       {theme.backgroundImage && (
                         <div className="flex flex-col items-center mt-4">
                           <div className="w-32 h-20 rounded-lg overflow-hidden border-2 border-white/20 mb-4">

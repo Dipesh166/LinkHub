@@ -6,6 +6,7 @@ export interface UserData {
   bio: string;
   profession: string;
   profileImage: string | null;
+  profileImageId: string | null;
   socialHandles: Array<{
     platform: string;
     url: string;
@@ -18,6 +19,7 @@ export interface UserData {
   theme: {
     background: string;
     backgroundImage: string | null;
+    backgroundImageId: string | null;
     gradientStyle: string;
     buttonStyle: string;
     cardStyle: string;
@@ -45,11 +47,13 @@ export async function getPublicPage(pageId: string): Promise<UserData | null> {
         bio: data.bio || '',
         profession: data.profession || '',
         profileImage: data.profileImage || null,
+        profileImageId: data.profileImageId || null,
         socialHandles: data.socialHandles || [],
         links: data.links || [],
         theme: {
           background: data.theme?.background || 'gradient',
           backgroundImage: data.theme?.backgroundImage || null,
+          backgroundImageId: data.theme?.backgroundImageId || null,
           gradientStyle: data.theme?.gradientStyle || 'midnight',
           buttonStyle: data.theme?.buttonStyle || 'rounded',
           cardStyle: data.theme?.cardStyle || 'glass',

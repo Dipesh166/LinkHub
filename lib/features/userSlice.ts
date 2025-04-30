@@ -1,7 +1,32 @@
 "use client"
 
 import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
-import { saveUserProfile, saveLinks, saveTheme, UserData, LinkData, ThemeData } from '../services/firebase-service';
+import { saveUserProfile, saveLinks, saveTheme, type UserData } from '../services/firebase-service';
+
+export interface LinkData {
+  id: string;
+  title: string;
+  url: string;
+  theme?: any;
+}
+
+export interface ThemeData {
+  background: string;
+  backgroundImage: string | null;
+  backgroundImageId: string | null;
+  gradientStyle: string;
+  buttonStyle: string;
+  cardStyle: string;
+  animation: string;
+  opacity: number;
+  blurAmount: number;
+  useCustomGradient: boolean;
+  customGradient?: {
+    color1: string;
+    color2: string;
+    angle: number;
+  };
+}
 
 export const professions = [
   "Software Developer",
@@ -40,6 +65,7 @@ interface UserState {
   bio: string
   profession: string
   profileImage: string | null
+  profileImageId: string | null
   onboardingComplete: boolean
   socialHandles: SocialHandle[]
   savedLinks: { id: string; username: string }[]
@@ -50,9 +76,15 @@ const initialState: UserState = {
   bio: "",
   profession: "",
   profileImage: null,
+  profileImageId: null,
   onboardingComplete: false,
   socialHandles: [],
   savedLinks: [],
+}
+
+interface ImagePayload {
+  url: string;
+  id: string;
 }
 
 export const userSlice = createSlice({
@@ -68,8 +100,9 @@ export const userSlice = createSlice({
     setProfession: (state, action: PayloadAction<string>) => {
       state.profession = action.payload
     },
-    setProfileImage: (state, action: PayloadAction<string>) => {
-      state.profileImage = action.payload
+    setProfileImage: (state, action: PayloadAction<ImagePayload>) => {
+      state.profileImage = action.payload.url;
+      state.profileImageId = action.payload.id;
     },
     completeOnboarding: (state) => {
       state.onboardingComplete = true
@@ -132,10 +165,6 @@ export const {
 } = userSlice.actions
 
 export default userSlice.reducer
-
-// REMOVE THE DUPLICATE IMPORTS BELOW
-// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// import { saveUserProfile, saveLinks, saveTheme, UserData, LinkData, ThemeData } from '../services/firebase-service';
 
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
