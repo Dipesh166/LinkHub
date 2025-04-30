@@ -251,7 +251,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
         <TabsContent value="profile" className="mt-0">
           <motion.div variants={container} initial="hidden" animate="show">
             <motion.div variants={item}>
-              <GlassCard className="mb-6 p-6">
+              <GlassCard className="mb-6 p-6 bg-black/30 backdrop-blur-md border border-white/10 rounded-lg shadow-xl">
                 <CardHeader className="pb-3 px-0 pt-0">
                   <CardTitle className="text-xl">Profile Image</CardTitle>
                 </CardHeader>

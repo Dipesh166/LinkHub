@@ -57,7 +57,7 @@ export default function PreviewPanel({ onToggleView }: PreviewPanelProps) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center p-4">
+    <div className="w-full h-full flex flex-col items-center p-4 pt-24">
       <div className="w-full max-w-md mx-auto">
         <motion.div
           className="rounded-xl overflow-hidden relative shadow-2xl"

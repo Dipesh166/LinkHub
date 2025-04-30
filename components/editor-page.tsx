@@ -40,7 +40,7 @@ export default function EditorPage() {
           <div className="w-1/2 p-6 overflow-y-auto">
             <AdvancedEditorPanel />
           </div>
-          <div className="w-1/2 p-6 bg-gray-900 overflow-y-auto">
+          <div className="w-1/2 bg-gray-900 lg:fixed lg:right-0 lg:top-0 lg:h-screen lg:w-1/2 flex items-center justify-center pt-8">
             <PreviewPanel />
           </div>
         </>
