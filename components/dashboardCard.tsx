@@ -1,38 +1,95 @@
-"use client"
+"use client";
 
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { motion } from "framer-motion";
 import Image from "next/image";
-import SocialIcon from "./social-icon";
-import LinkButton from "./link-button";
+import { GlassCard } from "@/components/ui/glass-card";
+import SocialIcon from "@/components/social-icon";
+import LinkButton from "@/components/link-button";
 import { gradients } from "@/lib/features/themeSlice";
-import type { UserData } from "@/lib/services/firebase-service";
 
-interface DashboardCardProps {
-  profile: UserData;
-  onClick?: () => void;
+interface UserData {
+  id: string;
+  username: string;
+  bio: string;
+  profession: string;
+  profileImage: string | null;
+  socialHandles: Array<{
+    platform: string;
+    url: string;
+  }>;
+  links: Array<{
+    id: string;
+    title: string;
+    url: string;
+  }>;
+  theme: {
+    background: string;
+    backgroundImage: string | null;
+    gradientStyle: string;
+    buttonStyle: string;
+    opacity: number;
+    blurAmount: number;
+    useCustomGradient: boolean;
+    customGradient?: {
+      color1: string;
+      color2: string;
+      angle: number;
+    };
+  };
 }
 
-export default function DashboardCard({ profile, onClick }: DashboardCardProps) {
-  const getBackgroundStyle = () => {
-    if (profile.theme.background === "image" && profile.theme.backgroundImage) {
+function DashboardCard() {
+  const [userDataList, setUserDataList] = useState<UserData[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchCollectionData = async () => {
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      try {
+        const userCollectionRef = collection(db, 'users', user.uid, 'profiles');
+        const querySnapshot = await getDocs(userCollectionRef);
+        const dataList = querySnapshot.docs.map(doc => ({
+          ...doc.data() as UserData,
+          id: doc.id
+        }));
+        setUserDataList(dataList);
+      } catch (error) {
+        console.error('Error fetching collection data:', error);
+      }
+    };
+
+    fetchCollectionData();
+  }, [user]);
+
+  const getBackgroundStyle = (theme: UserData['theme']) => {
+    if (theme.background === "image" && theme.backgroundImage) {
       return {
-        backgroundImage: `url(${profile.theme.backgroundImage})`,
+        backgroundImage: `url(${theme.backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }
     }
 
-    if (profile.theme.background === "gradient") {
-      if (profile.theme.useCustomGradient && profile.theme.customGradient) {
-        const { color1, color2, angle } = profile.theme.customGradient
-        return { background: `linear-gradient(${angle}deg, ${color1}, ${color2})` }
+    if (theme.background === "gradient") {
+      if (theme.useCustomGradient && theme.customGradient) {
+        const { color1, color2, angle } = theme.customGradient;
+        return { background: `linear-gradient(${angle}deg, ${color1}, ${color2})` };
+      } else {
+        return { background: gradients[theme.gradientStyle as keyof typeof gradients] || gradients.midnight };
       }
-      return { background: gradients[profile.theme.gradientStyle] || gradients.midnight }
     }
 
-    return { background: "#000000" }
-  }
+    return { background: "#000000" };
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -42,115 +99,146 @@ export default function DashboardCard({ profile, onClick }: DashboardCardProps) 
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 },
+  };
+
+  if (userDataList.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-white text-xl"
+        >
+          Loading...
+        </motion.div>
+      </div>
+    );
   }
 
   return (
-    <motion.div
-      className="w-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
-      onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="relative" style={getBackgroundStyle()}>
-        {profile.theme.background === "image" && profile.theme.backgroundImage && (
-          <>
-            <div
-              className="absolute inset-0"
-              style={{
-                zIndex: 0,
-                backgroundImage: `url(${profile.theme.backgroundImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: `blur(${profile.theme.blurAmount}px)`,
-              }}
-            ></div>
-            <div
-              className="absolute inset-0 bg-black"
-              style={{ zIndex: 1, opacity: profile.theme.opacity }}
-            ></div>
-          </>
-        )}
+    <div className="w-full flex flex-col items-center p-4">
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {userDataList.map((userData, index) => (
+            <GlassCard key={userData.id || index} className="overflow-hidden">
+              <motion.div
+                className="relative w-full"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                style={getBackgroundStyle(userData.theme)}
+              >
+                {userData.theme.background === "image" && userData.theme.backgroundImage && (
+                  <>
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        zIndex: 0,
+                        backgroundImage: `url(${userData.theme.backgroundImage})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        filter: `blur(${userData.theme.blurAmount}px)`,
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 bg-black"
+                      style={{ zIndex: 1, opacity: userData.theme.opacity }}
+                    />
+                  </>
+                )}
 
-        <motion.div
-          className="relative z-10 p-6 flex flex-col items-center gap-4"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          {profile.profileImage && (
-            <motion.div
-              className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/30"
-              variants={item}
-            >
-              <Image
-                src={profile.profileImage}
-                alt={profile.username}
-                width={80}
-                height={80}
-                className="w-full h-full object-cover"
-                unoptimized={profile.profileImage.startsWith('data:')}
-              />
-            </motion.div>
-          )}
+                <motion.div
+                  className="flex flex-col items-center gap-4 md:gap-6 p-6 md:p-8 relative"
+                  style={{ zIndex: 2 }}
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                >
+                  {userData.profileImage && (
+                    <motion.div
+                      className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 md:border-4 border-white/30 shadow-xl relative"
+                      variants={item}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent z-10 pointer-events-none"></div>
+                      <Image
+                        src={userData.profileImage}
+                        alt={userData.username}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
+                  )}
 
-          <motion.div className="text-center" variants={item}>
-            <h2 className="text-xl font-bold text-white">{profile.username}</h2>
-            {profile.profession && (
-              <p className="text-sm text-gray-300">{profile.profession}</p>
-            )}
-          </motion.div>
+                  <motion.div className="text-center" variants={item}>
+                    <h2 className="text-xl md:text-2xl font-bold text-white drop-shadow-md">{userData.username}</h2>
+                    {userData.profession && (
+                      <p className="text-sm md:text-base text-gray-300 mt-1 font-medium tracking-wide">
+                        {userData.profession}
+                      </p>
+                    )}
+                  </motion.div>
 
-          {profile.bio && (
-            <motion.p 
-              className="text-center text-sm text-gray-200 line-clamp-2"
-              variants={item}
-            >
-              {profile.bio}
-            </motion.p>
-          )}
+                  {userData.bio && (
+                    <motion.p
+                      className="text-center text-sm md:text-base text-gray-200 max-w-xs font-light leading-relaxed"
+                      variants={item}
+                    >
+                      {userData.bio}
+                    </motion.p>
+                  )}
 
-          {profile.socialHandles && profile.socialHandles.length > 0 && (
-            <motion.div className="flex gap-3" variants={item}>
-              {profile.socialHandles.slice(0, 3).map((handle, index) => (
-                <SocialIcon
-                  key={index}
-                  platform={handle.platform}
-                  url={handle.url}
-                  displayStyle="icon"
-                />
-              ))}
-              {profile.socialHandles.length > 3 && (
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-sm">
-                  +{profile.socialHandles.length - 3}
-                </div>
-              )}
-            </motion.div>
-          )}
+                  {userData.socialHandles && userData.socialHandles.length > 0 && (
+                    <motion.div className="flex gap-4 md:gap-5 my-2 md:my-4" variants={item}>
+                      {userData.socialHandles.map((handle, idx) => (
+                        <motion.div
+                          key={idx}
+                          whileHover={{ scale: 1.15, rotate: 5 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                        >
+                          <SocialIcon
+                            platform={handle.platform}
+                            url={handle.url}
+                            displayStyle="icon"
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
 
-          <motion.div className="w-full space-y-2" variants={container}>
-            {profile.links.slice(0, 2).map((link, index) => (
-              <motion.div key={link.id} variants={item}>
-                <LinkButton
-                  title={link.title}
-                  url={link.url}
-                  buttonStyle={profile.theme.buttonStyle}
-                  animation={profile.theme.animation}
-                />
+                  {userData.links && userData.links.length > 0 && (
+                    <motion.div className="w-full space-y-3 md:space-y-4 my-2 md:my-4" variants={container}>
+                      {userData.links.map((link) => (
+                        <motion.div
+                          key={link.id}
+                          variants={item}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <LinkButton
+                            title={link.title}
+                            url={link.url}
+                            buttonStyle={userData.theme.buttonStyle}
+                            animation={userData.theme.animation}
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </motion.div>
               </motion.div>
-            ))}
-            {profile.links.length > 2 && (
-              <motion.p className="text-center text-sm text-gray-400">
-                +{profile.links.length - 2} more links
-              </motion.p>
-            )}
-          </motion.div>
-        </motion.div>
+            </GlassCard>
+          ))}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
+
+export default DashboardCard;

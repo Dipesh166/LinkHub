@@ -3,15 +3,13 @@
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/AuthContext"
 import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import type { RootState } from "@/lib/store"
-import { Plus, Settings, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { getUserProfile } from "@/lib/services/firebase-service"
-import { GlassCard } from "@/components/ui/glass-card"
+import { useDispatch } from "react-redux"
+import { Plus, AlertCircle } from "lucide-react"
 import { Alert } from "@/components/ui/alert"
+import { getUserProfile } from "@/lib/services/firebase-service"
 import Header from "@/components/header"
 import { setUserInfo } from "@/lib/features/userSlice"
+import DashboardCard from "@/components/dashboardCard"
 
 interface LinkItem {
   id: string;
@@ -84,41 +82,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0A0A0F]">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900/20 to-black">
       <Header />
       <div className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {showLimitAlert && (
-            <Alert variant="destructive" className="mb-6">
+            <Alert variant="destructive" className="mb-6 bg-red-500/10 border border-red-500/20">
               <AlertCircle className="h-4 w-4" />
               <span>You can only create up to 3 links. Please delete an existing link to create a new one.</span>
             </Alert>
           )}
+            <DashboardCard />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {links.map((link) => (
-              <GlassCard key={link.id} className="p-6 hover:border-purple-500/30 transition-all duration-300">
-                <h3 className="text-xl font-semibold text-white mb-2">{link.title}</h3>
-                <a 
-                  href={link.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-purple-400 hover:text-purple-300 text-sm break-all"
-                >
-                  {link.url}
-                </a>
-              </GlassCard>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             {/* Create New Link Card */}
             <button
               onClick={handleCreateClick}
-              className={`bg-[#151520] rounded-xl p-6 flex flex-col items-center justify-center hover:bg-[#1a1a2a] transition-all border-2 border-dashed ${
-                links.length >= 3 ? 'border-red-500/30 hover:border-red-500' : 'border-purple-500/30 hover:border-purple-500'
+              className={`group relative overflow-hidden rounded-xl p-8 flex flex-col items-center justify-center transition-all duration-300 ${
+                links.length >= 3 
+                  ? 'bg-red-500/5 hover:bg-red-500/10 border-2 border-dashed border-red-500/30 hover:border-red-500/50' 
+                  : 'bg-purple-500/5 hover:bg-purple-500/10 border-2 border-dashed border-purple-500/30 hover:border-purple-500/50'
               }`}
             >
-              <Plus size={40} className={links.length >= 3 ? "text-red-500" : "text-purple-500"} />
-              <span className={`${links.length >= 3 ? "text-red-500" : "text-purple-500"} font-medium mt-2`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Plus 
+                size={48} 
+                className={`${
+                  links.length >= 3 
+                    ? "text-red-500/70 group-hover:text-red-500" 
+                    : "text-purple-500/70 group-hover:text-purple-500"
+                } transition-colors duration-300`} 
+              />
+              <span className={`${
+                links.length >= 3 
+                  ? "text-red-500/70 group-hover:text-red-500" 
+                  : "text-purple-500/70 group-hover:text-purple-500"
+                } font-medium mt-4 text-lg transition-colors duration-300`}
+              >
                 {links.length >= 3 ? "Link Limit Reached" : "Create New Link"}
               </span>
             </button>
