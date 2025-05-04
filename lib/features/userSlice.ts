@@ -1,7 +1,7 @@
 "use client"
 
 import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
-import { saveUserProfile, saveLinks, saveTheme, type UserData } from '../services/firebase-service';
+import { updateProfiles, saveLinks, saveTheme, type UserData } from '../services/firebase-service';
 
 export interface LinkData {
   id: string;
@@ -26,6 +26,59 @@ export interface ThemeData {
     color2: string;
     angle: number;
   };
+}
+
+export interface SocialHandle {
+  platform: string;
+  url: string;
+}
+
+interface UserState {
+  id: string | null;
+  username: string;
+  bio: string;
+  profession: string;
+  profileImage: string | null;
+  profileImageId: string | null;
+  onboardingComplete: boolean;
+  socialHandles: SocialHandle[];
+  savedLinks: { id: string; username: string }[];
+  links: Array<{
+    id: string;
+    title: string;
+    url: string;
+  }>;
+  theme: ThemeData;
+}
+
+const initialState: UserState = {
+  id: null,
+  username: "",
+  bio: "",
+  profession: "",
+  profileImage: null,
+  profileImageId: null,
+  onboardingComplete: false,
+  socialHandles: [],
+  savedLinks: [],
+  links: [],
+  theme: {
+    background: "gradient",
+    backgroundImage: null,
+    backgroundImageId: null,
+    gradientStyle: "midnight",
+    buttonStyle: "rounded",
+    cardStyle: "glass",
+    animation: "none",
+    opacity: 0.7,
+    blurAmount: 0,
+    useCustomGradient: false,
+    customGradient: {
+      color1: "#121063",
+      color2: "#1a0038",
+      angle: 135
+    }
+  }
 }
 
 export const professions = [
@@ -54,34 +107,6 @@ export const socialPlatforms = [
   { id: "dribbble", name: "Dribbble", placeholder: "username" },
 ]
 
-export interface SocialHandle {
-  platform: string;
-  username?: string; // Make username optional
-  url: string;
-}
-
-interface UserState {
-  username: string
-  bio: string
-  profession: string
-  profileImage: string | null
-  profileImageId: string | null
-  onboardingComplete: boolean
-  socialHandles: SocialHandle[]
-  savedLinks: { id: string; username: string }[]
-}
-
-const initialState: UserState = {
-  username: "",
-  bio: "",
-  profession: "",
-  profileImage: null,
-  profileImageId: null,
-  onboardingComplete: false,
-  socialHandles: [],
-  savedLinks: [],
-}
-
 interface ImagePayload {
   url: string;
   id: string;
@@ -92,100 +117,128 @@ export const userSlice = createSlice({
   initialState,
   reducers: {
     setUsername: (state, action: PayloadAction<string>) => {
-      state.username = action.payload
+      state.username = action.payload;
     },
     setBio: (state, action: PayloadAction<string>) => {
-      state.bio = action.payload
+      state.bio = action.payload;
     },
     setProfession: (state, action: PayloadAction<string>) => {
-      state.profession = action.payload
+      state.profession = action.payload;
     },
     setProfileImage: (state, action: PayloadAction<ImagePayload>) => {
       state.profileImage = action.payload.url;
       state.profileImageId = action.payload.id;
     },
+    setProfileId: (state, action: PayloadAction<string>) => {
+      state.id = action.payload;
+    },
     completeOnboarding: (state) => {
-      state.onboardingComplete = true
+      state.onboardingComplete = true;
     },
     setSocialHandles: (state, action: PayloadAction<SocialHandle[]>) => {
-      state.socialHandles = action.payload
+      state.socialHandles = action.payload;
     },
     addSocialHandle: (state, action: PayloadAction<SocialHandle>) => {
-      state.socialHandles.push(action.payload)
+      state.socialHandles.push(action.payload);
     },
     updateSocialHandle: (state, action: PayloadAction<{ index: number; handle: SocialHandle }>) => {
-      const { index, handle } = action.payload
+      const { index, handle } = action.payload;
       if (index >= 0 && index < state.socialHandles.length) {
-        state.socialHandles[index] = handle
+        state.socialHandles[index] = handle;
       }
     },
     removeSocialHandle: (state, action: PayloadAction<number>) => {
-      state.socialHandles.splice(action.payload, 1)
+      state.socialHandles.splice(action.payload, 1);
     },
     addSavedLink: (state, action: PayloadAction<{ id: string; username: string }>) => {
-      state.savedLinks.push(action.payload)
+      state.savedLinks.push(action.payload);
     },
-    setUserInfo: (
-      state,
-      action: PayloadAction<{
-        username: string
-        bio: string
-        profession: string
-        socialHandles: SocialHandle[]
-      }>,
-    ) => {
-      state.username = action.payload.username
-      state.bio = action.payload.bio
-      state.profession = action.payload.profession
-      state.socialHandles = action.payload.socialHandles
-      state.onboardingComplete = true
+    setLinks: (state, action: PayloadAction<LinkData[]>) => {
+      state.links = action.payload;
+    },
+    setTheme: (state, action: PayloadAction<ThemeData>) => {
+      state.theme = action.payload;
+    },
+    setUserInfo: (state, action: PayloadAction<{
+      id: string;
+      username: string;
+      bio: string;
+      profession: string;
+      socialHandles: SocialHandle[];
+      links: LinkData[];
+      theme: ThemeData;
+      profileImage: string | null;  // Add this
+      profileImageId: string | null;  // Add this
+    }>) => {
+      return {
+        ...state,
+        ...action.payload,
+        onboardingComplete: true
+      };
     },
   },
   extraReducers: (builder) => {
     builder.addCase(updateProfile.fulfilled, (state, action) => {
-      // Merge the updated fields into the state
       Object.assign(state, action.payload);
+    })
+    .addCase(updateLinks.fulfilled, (state, action) => {
+      state.links = action.payload;
+    })
+    .addCase(updateTheme.fulfilled, (state, action) => {
+      state.theme = action.payload;
     });
-    // You can add similar handlers for updateLinks and updateTheme if needed
   }
-})
+});
 
 export const {
   setUsername,
   setBio,
   setProfession,
   setProfileImage,
+  setProfileId,
   completeOnboarding,
   setSocialHandles,
   addSocialHandle,
   updateSocialHandle,
   removeSocialHandle,
   addSavedLink,
+  setLinks,
+  setTheme,
   setUserInfo,
-} = userSlice.actions
+} = userSlice.actions;
 
-export default userSlice.reducer
+export default userSlice.reducer;
 
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
-  async ({ userId, data }: { userId: string; data: Partial<UserData> }) => {
-    await saveUserProfile(userId, data);
+  async ({ userId, profileId, data }: { 
+    userId: string; 
+    profileId: string; 
+    data: Required<Pick<UserData, 'id'>> & Partial<Omit<UserData, 'id'>>
+  }) => {
+    await updateProfiles(userId, profileId, {
+      
+      profileImage: data.profileImage || null,
+      profileImageId: data.profileImageId || null,
+      
+      
+    });
     return data;
   }
 );
 
 export const updateLinks = createAsyncThunk(
   'links/updateLinks',
-  async ({ userId, links }: { userId: string; links: LinkData[] }) => {
-    await saveLinks(userId, links);
+  async ({ userId, profileId, links }: { userId: string; profileId: string; links: LinkData[] }) => {
+    await saveLinks(userId, profileId, links);
     return links;
   }
 );
 
 export const updateTheme = createAsyncThunk(
   'theme/updateTheme',
-  async ({ userId, theme }: { userId: string; theme: ThemeData }) => {
-    await saveTheme(userId, theme);
+  async ({ userId, profileId, theme }: { userId: string; profileId: string; theme: ThemeData }) => {
+    await saveTheme(userId, profileId, theme);
     return theme;
   }
 );

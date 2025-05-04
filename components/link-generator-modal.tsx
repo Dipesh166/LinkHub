@@ -3,6 +3,7 @@
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/lib/store"
 import { toggleModal } from "@/lib/features/modalSlice"
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Check, Copy, X, Share2, Twitter, Facebook, Linkedin } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -16,6 +17,7 @@ export default function LinkGeneratorModal() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const profileId = useSelector((state: RootState) => state.user.id);
 
   // Check if window is available
   const isWindowAvailable = () => {
@@ -25,12 +27,12 @@ export default function LinkGeneratorModal() {
   if (!isOpen || !user) return null;
 
   const getShareableLink = () => {
-    if (!user) return '';
+    if (!user?.uid || !profileId) return '';
     if (!isWindowAvailable()) return '';
     
     const protocol = window.location.protocol;
     const hostname = window.location.host;
-    return `${protocol}//${hostname}/${user.uid}`;
+    return `${protocol}//${hostname}/${user.uid}_${profileId}`;
   };
 
   const handlePreviewOpen = () => {
@@ -42,9 +44,12 @@ export default function LinkGeneratorModal() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(getShareableLink());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const link = getShareableLink();
+    if (link) {
+      navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleClose = () => {
@@ -54,6 +59,8 @@ export default function LinkGeneratorModal() {
   const handleShare = (platform: string) => {
     if (!isWindowAvailable()) return;
     const url = getShareableLink();
+    if (!url) return;
+    
     const text = "Check out my LinkHub page!";
     
     const shareUrls = {

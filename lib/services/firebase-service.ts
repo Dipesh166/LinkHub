@@ -1,7 +1,9 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
+import { writeBatch, query, where, getDocs } from 'firebase/firestore';
 
 export interface UserData {
+  id: string;
   username: string;
   bio: string;
   profession: string;
@@ -35,14 +37,15 @@ export interface UserData {
   };
 }
 
-export async function getPublicPage(pageId: string): Promise<UserData | null> {
+export async function getPublicPage(userId: string, profileId: string): Promise<UserData | null> {
   try {
-    const docRef = doc(db, 'users', pageId);
-    const docSnap = await getDoc(docRef);
+    const profileRef = doc(db, "users", userId, "profiles", profileId);
+    const docSnap = await getDoc(profileRef);
     
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
+        id: profileId,
         username: data.username || '',
         bio: data.bio || '',
         profession: data.profession || '',
@@ -76,21 +79,69 @@ export async function getPublicPage(pageId: string): Promise<UserData | null> {
   }
 }
 
-export async function saveUserProfile(userId: string, data: Partial<UserData>) {
+export async function getUserProfile(userId: string, profileId: string): Promise<UserData | null> {
+  if (!userId || !profileId) {
+    console.warn("Invalid userId or profileId passed to getUserProfile");
+    return null;
+  }
+
   try {
-    const docRef = doc(db, 'users', userId);
-    await setDoc(docRef, { ...data }, { merge: true });
-    return true;
+    const profileRef = doc(db, "users", userId, "profiles", profileId); // 👈 split into segments
+    const docSnap = await getDoc(profileRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data() as UserData;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    throw error;
+  }
+}
+
+export async function saveUserProfile(userId: string, newUserData: UserData) {
+  try {
+    const profilesRef = collection(db, "users", userId, "profiles");
+    const newProfileRef = doc(profilesRef);
+    const profileId = newProfileRef.id;
+
+    // Write the user data to Firestore
+    await setDoc(newProfileRef, newUserData);
+
+    return profileId;
   } catch (error) {
     console.error('Error saving user profile:', error);
     throw error;
   }
 }
 
-export async function saveLinks(userId: string, links: Array<{ id: string; title: string; url: string; theme?: any }>) {
+export async function updateProfiles(userId: string, profileId: string, updates: Partial<UserData>): Promise<boolean> {
   try {
-    const docRef = doc(db, 'users', userId);
-    await setDoc(docRef, { links }, { merge: true });
+    if (!userId || !profileId) {
+      throw new Error('Invalid userId or profileId');
+    }
+
+    if (userId === profileId) {
+      throw new Error('Profile ID cannot be the same as User ID');
+    }
+
+    const profileRef = doc(db, `users/${userId}/profiles/${profileId}`);
+    await setDoc(profileRef, updates, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+}
+
+export async function saveLinks(userId: string, profileId: string, links: Array<{ id: string; title: string; url: string; theme?: any }>) {
+  try {
+    if (userId === profileId) {
+      throw new Error('Profile ID cannot be the same as User ID');
+    }
+
+    const profileRef = doc(db, "users", userId, "profiles", profileId);
+    await setDoc(profileRef, { links }, { merge: true });
     return true;
   } catch (error) {
     console.error('Error saving links:', error);
@@ -98,13 +149,48 @@ export async function saveLinks(userId: string, links: Array<{ id: string; title
   }
 }
 
-export async function saveTheme(userId: string, theme: any) {
+export async function saveTheme(userId: string, profileId: string, theme: any) {
   try {
-    const docRef = doc(db, 'users', userId);
-    await setDoc(docRef, { theme }, { merge: true });
+    if (userId === profileId) {
+      throw new Error('Profile ID cannot be the same as User ID');
+    }
+
+    const profileRef = doc(db, `users/${userId}/profiles/${profileId}`);
+    await setDoc(profileRef, { theme }, { merge: true });
     return true;
   } catch (error) {
     console.error('Error saving theme:', error);
+    throw error;
+  }
+}
+
+// Gets all profiles for a user
+export async function getAllProfiles(userId: string): Promise<UserData[]> {
+  try {
+    const profilesRef = collection(db, `users/${userId}/profiles`);
+    const querySnapshot = await getDocs(profilesRef);
+    
+    if (querySnapshot.empty) {
+      return [];
+    }
+
+    return querySnapshot.docs.map(doc => ({
+      ...(doc.data() as UserData),
+      id: doc.id
+    }));
+  } catch (error) {
+    console.error('Error getting all profiles:', error);
+    throw error;
+  }
+}
+
+export async function deleteProfile(userId: string, profileId: string): Promise<boolean> {
+  try {
+    const profileRef = doc(db, `users/${userId}/profiles/${profileId}`);
+    await setDoc(profileRef, { deleted: true }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Error deleting profile:', error);
     throw error;
   }
 }

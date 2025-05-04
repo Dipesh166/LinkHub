@@ -23,10 +23,13 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         await signUp(email, password)
+        // New users go directly to dashboard
+        router.push("/dashboard")
       } else {
         await signIn(email, password)
+        // Existing users go to dashboard
+        router.push("/dashboard")
       }
-      router.push("/")
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     }

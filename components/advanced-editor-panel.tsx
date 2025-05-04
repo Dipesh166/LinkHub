@@ -34,7 +34,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { SocialIcon } from "@/components/social-icon"
 import { useAuth } from "@/lib/AuthContext"
 import { updateProfile } from "@/lib/features/userSlice"
-import { saveTheme, saveLinks } from "@/lib/services/firebase-service"
+import { saveTheme, saveLinks, updateProfiles } from "@/lib/services/firebase-service"
 
 interface AdvancedEditorPanelProps {
   onToggleView?: () => void
@@ -56,36 +56,45 @@ const professions = [
 
 export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPanelProps) {
   const { user } = useAuth();
-  const dispatch = useDispatch()
-  const links = useSelector((state: RootState) => state.links)
-  const theme = useSelector((state: RootState) => state.theme)
-  const { username, bio, profession, socialHandles, profileImage } = useSelector((state: RootState) => state.user)
+  const dispatch = useDispatch();
+  const links = useSelector((state: RootState) => state.links);
+  const theme = useSelector((state: RootState) => state.theme);
+  const { username, bio, profession, socialHandles, profileImage } = useSelector((state: RootState) => state.user);
 
-  const [newLink, setNewLink] = useState({ title: "", url: "" })
-  const [userBio, setUserBio] = useState(bio)
-  const [activeTab, setActiveTab] = useState("profile")
+  // Add profileId state
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [newLink, setNewLink] = useState({ title: "", url: "" });
+  const [userBio, setUserBio] = useState(bio);
+  const [activeTab, setActiveTab] = useState("profile");
   const [dragOver, setDragOver] = useState(false);
+
+  // Add useEffect to get profileId from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('profileId');
+    if (id) {
+      setProfileId(id);
+    }
+  }, []);
 
   useEffect(() => {
     setUserBio(bio)
   }, [bio])
 
   const handleAddLink = async () => {
-    if (newLink.title && newLink.url && links.length < 10 && user) {
+    if (newLink.title && newLink.url && links.length < 10 && user && profileId) {
       const newLinkData = {
-        id: uuidv4(), // Generate a unique ID for the link
+        id: uuidv4(),
         title: newLink.title,
         url: newLink.url.startsWith("http") ? newLink.url : `https://${newLink.url}`,
       }
-
-      // Update Redux state
+  
       dispatch(addLink(newLinkData))
       setNewLink({ title: "", url: "" })
-
-      // Save to Firebase
+  
       try {
         const updatedLinks = [...links, newLinkData]
-        await saveLinks(user.uid, updatedLinks)
+        await saveLinks(user.uid, profileId, updatedLinks)
       } catch (error) {
         console.error('Error saving links:', error)
       }
@@ -104,9 +113,8 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     const updatedTheme = { ...theme, [key]: value };
     dispatch(updateTheme(updatedTheme));
     
-    // Save theme to Firestore
-    if (user && user.uid) {
-      saveTheme(user.uid, updatedTheme)
+    if (user?.uid && profileId) {
+      saveTheme(user.uid, profileId, updatedTheme)
         .catch(error => console.error('Error saving theme:', error));
     }
   };
@@ -120,9 +128,10 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
   }
 
   const handleBioSave = async () => {
-    if (user) {
+    if (user && profileId) {
       await dispatch(updateProfile({
         userId: user.uid,
+        profileId: profileId,
         data: { bio: userBio }
       }));
     }
@@ -187,31 +196,30 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     
     const file = e.dataTransfer.files[0];
     if (!file || !file.type.startsWith("image/")) return;
-
+  
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      if (type === "profile" && user?.uid) {
+      if (type === "profile" && user?.uid && profileId) {
         dispatch(updateProfile({
           userId: user.uid,
-          data: { profileImage: dataUrl }
+          profileId: profileId,
+          data: { profileImage: dataUrl, profileImageId:data }
         }));
-      } else if (type === "background") {
+       
+      } else if (type === "background" && user?.uid && profileId) {
         dispatch(updateTheme({ backgroundImage: dataUrl }));
-        if (user?.uid) {
-          saveTheme(user.uid, { ...theme, backgroundImage: dataUrl });
-        }
+        saveTheme(user.uid, profileId, { ...theme, backgroundImage: dataUrl, backgroundImageId:dataUrl });
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // Add useEffect to sync links with Firebase whenever they change
   useEffect(() => {
     const syncLinksWithFirebase = async () => {
-      if (user && user.uid && links) {
+      if (user?.uid && profileId && links) {
         try {
-          await saveLinks(user.uid, links);
+          await saveLinks(user.uid, profileId, links);
         } catch (error) {
           console.error('Error syncing links with Firebase:', error);
         }
@@ -219,7 +227,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
     };
 
     syncLinksWithFirebase();
-  }, [user, links]);
+  }, [user, profileId, links]);
 
   return (
     <div className="w-full max-w-xl mx-auto space-y-6 p-4">
@@ -275,6 +283,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                               const dataUrl = event.target?.result as string;
                               dispatch(updateProfile({
                                 userId: user.uid,
+                                profileId: profileId,
                                 data: { profileImage: dataUrl }
                               }));
                             };
@@ -643,7 +652,7 @@ export default function AdvancedEditorPanel({ onToggleView }: AdvancedEditorPane
                                 const dataUrl = event.target?.result as string;
                                 dispatch(updateTheme({ backgroundImage: dataUrl }));
                                 if (user && user.uid) {
-                                  saveTheme(user.uid, { ...theme, backgroundImage: dataUrl });
+                                  saveTheme(user.uid, profileId, { ...theme, backgroundImage: dataUrl });
                                 }
                               };
                               reader.readAsDataURL(file);

@@ -31,7 +31,17 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
   useEffect(() => {
     const fetchPageData = async () => {
       try {
-        const data = await getPublicPage(pageId)
+        // Split the pageId into userId and profileId if it contains a separator
+        const [userId, profileId] = pageId.split('_')
+        if (!userId || !profileId) {
+          setError("Invalid page URL")
+          setTimeout(() => {
+            router.push("/")
+          }, 3000)
+          return
+        }
+
+        const data = await getPublicPage(userId, profileId)
         if (data) {
           setPageData(data)
         } else {
@@ -110,13 +120,25 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-6" style={getBackgroundStyle()}>
+    <div className="min-h-screen flex flex-col items-center p-6 relative" style={getBackgroundStyle()}>
       {/* Background overlay for image backgrounds */}
       {pageData.theme.background === "image" && pageData.theme.backgroundImage && (
-        <div 
-          className="absolute inset-0 bg-black" 
-          style={{ opacity: pageData.theme.opacity }}
-        ></div>
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              zIndex: 0,
+              backgroundImage: `url(${pageData.theme.backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: `blur(${pageData.theme.blurAmount}px)`,
+            }}
+          ></div>
+          <div
+            className="absolute inset-0 bg-black"
+            style={{ zIndex: 1, opacity: pageData.theme.opacity }}
+          ></div>
+        </>
       )}
 
       <motion.div

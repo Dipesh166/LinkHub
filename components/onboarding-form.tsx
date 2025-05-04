@@ -36,13 +36,13 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { useAuth } from "@/lib/AuthContext";
 import { saveUserProfile } from "@/lib/services/firebase-service";
+import { useRouter } from "next/navigation";
 
 export default function OnboardingForm() {
   const dispatch = useDispatch();
-  const currentUsername = useSelector(
-    (state: RootState) => state.user.username
-  );
-  
+  const router = useRouter();
+  const currentUsername = useSelector((state: RootState) => state.user.username);
+  const generatedLink = useSelector((state: RootState) => state.modal.generatedLink);
 
   const [formData, setFormData] = useState({
     username: currentUsername,
@@ -54,31 +54,88 @@ export default function OnboardingForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const steps = ["Username", "Bio", "Profession", "Social Media"];
 
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // If user already has a generated link, redirect to dashboard
+    if (generatedLink) {
+      router.push('/dashboard');
+    }
+  }, [generatedLink, router]);
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const { user } = useAuth(); // Get the authenticated user
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.username.trim() && formData.profession) {
+      // Update Redux state with the correct structure
       dispatch(
         setUserInfo({
+          id: user?.uid || '',
           username: formData.username.trim(),
           bio: formData.bio.trim(),
           profession: formData.profession,
+          profileImage: null,
+          profileImageId: null,
           socialHandles: formData.socialHandles,
+          links: [],
+          theme: {
+            background: "gradient",
+            backgroundImage: null,
+            backgroundImageId: null,
+            gradientStyle: "midnight",
+            buttonStyle: "rounded",
+            cardStyle: "glass",
+            animation: "none",
+            opacity: 0.7,
+            blurAmount: 0,
+            useCustomGradient: false,
+            customGradient: {
+              color1: "#121063",
+              color2: "#1a0038",
+              angle: 135
+            }
+          }
         })
       );
+
       // Save to Firebase if user is authenticated
       if (user && user.uid) {
-        await saveUserProfile(user.uid, {
-          username: formData.username.trim(),
-          bio: formData.bio.trim(),
-          profession: formData.profession,
-          socialHandles: formData.socialHandles,
-        });
+        try {
+          const profileId = await saveUserProfile(user.uid, {
+            id: user.uid,
+            username: formData.username.trim(),
+            bio: formData.bio.trim(),
+            profession: formData.profession,
+            profileImage: null,
+            profileImageId: null,
+            socialHandles: formData.socialHandles,
+            links: [],
+            theme: {
+              background: "gradient",
+              backgroundImage: null,
+              backgroundImageId: null,
+              gradientStyle: "midnight",
+              buttonStyle: "rounded",
+              cardStyle: "glass",
+              animation: "none",
+              opacity: 0.7,
+              blurAmount: 0,
+              useCustomGradient: false,
+              customGradient: {
+                color1: "#121063",
+                color2: "#1a0038",
+                angle: 135
+              }
+            }
+          });
+          // After successful save, redirect to editor page with the profile ID
+          router.push(`/Editor?profileId=${profileId}`);
+        } catch (error) {
+          console.error('Error saving profile:', error);
+        }
       }
     }
   };

@@ -26,8 +26,11 @@ export const linksSlice = createSlice({
     removeLink: (state, action: PayloadAction<string>) => {
       return state.filter((link) => link.id !== action.payload)
     },
+    setLinks: (state, action: PayloadAction<Link[]>) => {
+      return action.payload
+    }
   },
 })
 
-export const { addLink, updateLink, removeLink } = linksSlice.actions
+export const { addLink, updateLink, removeLink, setLinks } = linksSlice.actions
 export default linksSlice.reducer
