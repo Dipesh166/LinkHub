@@ -33,7 +33,11 @@ export default function Header() {
   }
 
   const navigateToHome = () => {
-    router.push('/')
+    if (user) {
+      router.push('/dashboard')
+    } else {
+      router.push('/login')
+    }
   }
 
   return (
@@ -65,19 +69,21 @@ export default function Header() {
             </motion.div>
           )}
 
-          {username && onboardingComplete && (
+          {user && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.3 }}
               className="flex items-center gap-2"
             >
-              <Button
-                onClick={handleGenerateLink}
-                className="bg-white text-black hover:bg-gray-200 rounded-full font-medium"
-              >
-                <Link2 className="mr-2 h-4 w-4" /> Generate Link
-              </Button>
+              {username && onboardingComplete && (
+                <Button
+                  onClick={handleGenerateLink}
+                  className="bg-white text-black hover:bg-gray-200 rounded-full font-medium"
+                >
+                  <Link2 className="mr-2 h-4 w-4" /> Generate Link
+                </Button>
+              )}
 
               <Button
                 onClick={handleLogout}

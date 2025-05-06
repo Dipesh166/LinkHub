@@ -82,47 +82,70 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900/20 to-black">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#0A0A0F] via-[#1a1333] to-[#2d1a4d]">
       <Header />
-      <div className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="flex-1 px-2 py-4 sm:px-4 sm:py-6 md:p-8 lg:p-10">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Dashboard Header */}
+          <div className="text-center md:text-left space-y-2">
+            <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+              Your Link Hub
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base">
+              Manage and customize your link profiles with ease
+            </p>
+          </div>
+
           {showLimitAlert && (
-            <Alert variant="destructive" className="mb-6 bg-red-500/10 border border-red-500/20">
+            <Alert variant="destructive" className="mb-6 bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
               <AlertCircle className="h-4 w-4" />
-              <span>You can only create up to 3 links. Please delete an existing link to create a new one.</span>
+              <span className="ml-2">You can only create up to 3 links. Please delete an existing link to create a new one.</span>
             </Alert>
           )}
-            <DashboardCard />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
+          <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-12">
             {/* Create New Link Card */}
-            <button
-              onClick={handleCreateClick}
-              className={`group relative overflow-hidden rounded-xl p-8 flex flex-col items-center justify-center transition-all duration-300 ${
-                links.length >= 3 
-                  ? 'bg-red-500/5 hover:bg-red-500/10 border-2 border-dashed border-red-500/30 hover:border-red-500/50' 
-                  : 'bg-purple-500/5 hover:bg-purple-500/10 border-2 border-dashed border-purple-500/30 hover:border-purple-500/50'
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <Plus 
-                size={48} 
-                className={`${
+            <div className="w-full max-w-xs mx-auto md:mx-auto lg:mx-0 md:w-[320px] lg:w-[360px]">
+              <button
+                onClick={handleCreateClick}
+                disabled={links.length >= 3}
+                className={`group relative overflow-hidden rounded-2xl w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[520px] flex flex-col items-center justify-center transition-all duration-500 backdrop-blur-sm ${
                   links.length >= 3 
-                    ? "text-red-500/70 group-hover:text-red-500" 
-                    : "text-purple-500/70 group-hover:text-purple-500"
-                } transition-colors duration-300`} 
-              />
-              <span className={`${
-                links.length >= 3 
-                  ? "text-red-500/70 group-hover:text-red-500" 
-                  : "text-purple-500/70 group-hover:text-purple-500"
-                } font-medium mt-4 text-lg transition-colors duration-300`}
+                    ? 'bg-red-500/10 hover:bg-red-500/15 border border-red-500/30 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.2)] opacity-60 cursor-not-allowed' 
+                    : 'bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/30 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]'
+                }`}
               >
-                {links.length >= 3 ? "Link Limit Reached" : "Create New Link"}
-              </span>
-            </button>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* Animated Content Container */}
+                <div className="relative z-10 transform group-hover:scale-110 transition-transform duration-500 flex flex-col items-center">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-500" />
+                    <Plus 
+                      size={40} 
+                      className={`${
+                        links.length >= 3 
+                          ? "text-red-400 group-hover:text-red-300" 
+                          : "text-purple-400 group-hover:text-purple-300"
+                      } relative transition-colors duration-500`} 
+                    />
+                  </div>
+                  <span className={`${
+                    links.length >= 3 
+                      ? "text-red-400 group-hover:text-red-300" 
+                      : "text-purple-400 group-hover:text-purple-300"
+                    } font-semibold mt-6 text-base sm:text-lg md:text-xl text-center transition-colors duration-500`}
+                  >
+                    {links.length >= 3 ? "Link Limit Reached" : "Create New Link"}
+                  </span>
+                </div>
+                {/* Bottom Gradient */}
+                <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-24 md:h-32 lg:h-36 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </button>
+            </div>
+            <div className="flex-1 w-full">
+              <DashboardCard />
+            </div>
           </div>
         </div>
       </div>

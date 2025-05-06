@@ -210,6 +210,10 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
           ))}
         </motion.div>
       </motion.div>
+      {/* Add this footer at the very end */}
+      <footer className="w-full text-center mt-10 mb-2 text-sm text-gray-400 z-20 opacity-30">
+        Made with <span className="text-red-500">❤️</span> by Dipesh Kumar Mandal
+      </footer>
     </div>
   )
 }
