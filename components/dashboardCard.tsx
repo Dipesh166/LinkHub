@@ -10,6 +10,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import SocialIcon from "@/components/social-icon";
 import LinkButton from "@/components/link-button";
 import { gradients } from "@/lib/features/themeSlice";
+import { Share2 } from 'lucide-react'; // Add this import at the top
 
 interface UserData {
   id: string;
@@ -120,10 +121,32 @@ function DashboardCard() {
     );
   }
 
+  const handleShare = async (userId: string, profileId: string, username: string) => {
+    const protocol = window.location.protocol;
+    const hostname = window.location.host;
+    const url = `${protocol}//${hostname}/${userId}_${profileId}`;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${username}'s LinkHub Profile`,
+          text: `Check out ${username}'s LinkHub profile!`,
+          url: url
+        });
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        await navigator.clipboard.writeText(url);
+        // You might want to add a toast notification here
+        alert('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   return (
     <div className="w-full flex flex-col items-center p-4">
       <div className="w-full max-w-4xl mx-auto">
-        {/* Carousel for mobile and tablet, grid for large screens */}
         <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible lg:snap-none">
           {userDataList.map((userData, index) => {
             const profileId = userData.id;
@@ -136,11 +159,24 @@ function DashboardCard() {
               <div
                 key={userData.id || index}
                 className="min-w-[340px] max-w-sm lg:min-w-0 lg:max-w-none snap-center lg:snap-none flex-shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105"
-                onClick={handleCardClick}
               >
-                <GlassCard className="overflow-hidden">
+                <GlassCard className="overflow-hidden relative">
+                  {/* Add Share Button */}
+                  <motion.button
+                    className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click
+                      handleShare(user.uid, profileId, userData.username);
+                    }}
+                  >
+                    <Share2 className="w-5 h-5 text-white" />
+                  </motion.button>
+
                   <motion.div
                     className="relative w-full"
+                    onClick={handleCardClick}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}

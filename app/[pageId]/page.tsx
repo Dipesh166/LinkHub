@@ -11,6 +11,7 @@ import { getPublicPage } from "@/lib/services/firebase-service"
 import type { UserData } from "@/lib/services/firebase-service"
 import { useAuth } from "@/lib/AuthContext"
 import { use } from 'react'
+import { Share2 } from 'lucide-react';
 
 interface PageParams {
   pageId: string
@@ -147,6 +148,39 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
         initial="hidden"
         animate="show"
       >
+        {/* Add Share Button at the top */}
+        <motion.button
+          className="absolute top-0 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={async () => {
+            const url = window.location.href;
+            const title = `${pageData.username}'s LinkHub Profile`;
+            const text = `Check out ${pageData.username}'s LinkHub profile!`;
+
+            try {
+              if (navigator.share) {
+                // Use native share on mobile devices
+                await navigator.share({
+                  title,
+                  text,
+                  url
+                });
+              } else {
+                // Fallback for desktop - copy to clipboard
+                await navigator.clipboard.writeText(url);
+                // You might want to add a toast notification here
+                alert('Link copied to clipboard!');
+              }
+            } catch (error) {
+              console.error('Error sharing:', error);
+            }
+          }}
+        >
+          <Share2 className="w-5 h-5 text-white" />
+        </motion.button>
+
         {/* Profile Image */}
         {pageData.profileImage && (
           <motion.div
@@ -210,6 +244,7 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
           ))}
         </motion.div>
       </motion.div>
+
       {/* Add this footer at the very end */}
       <footer className="w-full text-center mt-10 mb-2 text-sm text-gray-400 z-20 opacity-30">
         Made with <span className="text-red-500">❤️</span> by Dipesh Kumar Mandal
