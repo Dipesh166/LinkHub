@@ -7,7 +7,7 @@ import LinkButton from "@/components/link-button"
 import { motion } from "framer-motion"
 import { gradients } from "@/lib/features/themeSlice"
 import SocialIcon from "@/components/social-icon"
-import { getPublicPage } from "@/lib/services/firebase-service"
+import { getPublicPage, getPublicPageBySlug } from "@/lib/services/firebase-service"
 import type { UserData } from "@/lib/services/firebase-service"
 import { useAuth } from "@/lib/AuthContext"
 import { use } from 'react'
@@ -32,17 +32,22 @@ export default function Page({ params }: { params: PageParams | Promise<PagePara
   useEffect(() => {
     const fetchPageData = async () => {
       try {
-        // Split the pageId into userId and profileId if it contains a separator
+        // Try to split as userId_profileId
         const [userId, profileId] = pageId.split('_')
-        if (!userId || !profileId) {
-          setError("Invalid page URL")
-          setTimeout(() => {
-            router.push("/")
-          }, 3000)
-          return
+        let data = null
+
+        if (userId && profileId) {
+          data = await getPublicPage(userId, profileId)
+        } else {
+          // If not a combo, treat as slug (force lowercase)
+          data = await getPublicPageBySlug(pageId.toLowerCase())
         }
 
-        const data = await getPublicPage(userId, profileId)
+        // Add this line to log the result of getPublicPageBySlug
+        if (!userId || !profileId) {
+          console.log("Fetched data using getPublicPageBySlug:", data)
+        }
+
         if (data) {
           setPageData(data)
         } else {

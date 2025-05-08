@@ -49,6 +49,7 @@ interface UserState {
     url: string;
   }>;
   theme: ThemeData;
+  slug: string;
 }
 
 const initialState: UserState = {
@@ -78,7 +79,8 @@ const initialState: UserState = {
       color2: "#1a0038",
       angle: 135
     }
-  }
+  },
+  slug: ""
 }
 
 export const professions = [
@@ -167,8 +169,9 @@ export const userSlice = createSlice({
       socialHandles: SocialHandle[];
       links: LinkData[];
       theme: ThemeData;
-      profileImage: string | null;  // Add this
-      profileImageId: string | null;  // Add this
+      profileImage: string | null;
+      profileImageId: string | null;
+      slug: string;
     }>) => {
       return {
         ...state,
@@ -207,28 +210,16 @@ export const {
   setUserInfo,
 } = userSlice.actions;
 
-export default userSlice.reducer;
-
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
-  async ({ userId, profileId, data }: { 
-    userId: string; 
-    profileId: string; 
-    data: Required<Pick<UserData, 'id'>> & Partial<Omit<UserData, 'id'>>
-  }) => {
-    await updateProfiles(userId, profileId, {
-      
-      profileImage: data.profileImage || null,
-      profileImageId: data.profileImageId || null,
-      
-      
-    });
+  async ({ userId, profileId, data }: { userId: string; profileId: string; data: Partial<UserData> }) => {
+    await updateProfiles(userId, profileId, data);
     return data;
   }
 );
 
 export const updateLinks = createAsyncThunk(
-  'links/updateLinks',
+  'user/updateLinks',
   async ({ userId, profileId, links }: { userId: string; profileId: string; links: LinkData[] }) => {
     await saveLinks(userId, profileId, links);
     return links;
@@ -236,9 +227,11 @@ export const updateLinks = createAsyncThunk(
 );
 
 export const updateTheme = createAsyncThunk(
-  'theme/updateTheme',
+  'user/updateTheme',
   async ({ userId, profileId, theme }: { userId: string; profileId: string; theme: ThemeData }) => {
     await saveTheme(userId, profileId, theme);
     return theme;
   }
 );
+
+export default userSlice.reducer;

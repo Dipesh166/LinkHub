@@ -18,6 +18,7 @@ export default function LinkGeneratorModal() {
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const profileId = useSelector((state: RootState) => state.user.id);
+  const slug = useSelector((state: RootState) => state.user.slug);
 
   // Check if window is available
   const isWindowAvailable = () => {
@@ -27,12 +28,13 @@ export default function LinkGeneratorModal() {
   if (!isOpen || !user) return null;
 
   const getShareableLink = () => {
-    if (!user?.uid || !profileId) return '';
+    console.log('Current slug:', slug); // Add this line to debug
+    if (!slug) return '';
     if (!isWindowAvailable()) return '';
     
     const protocol = window.location.protocol;
     const hostname = window.location.host;
-    return `${protocol}//${hostname}/${user.uid}_${profileId}`;
+    return `${protocol}//${hostname}/${slug}`;
   };
 
   const handlePreviewOpen = () => {

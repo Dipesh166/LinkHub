@@ -11,42 +11,36 @@ export const gradients = {
   cosmic: "linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)",
   ember: "linear-gradient(135deg, #232526, #414345)",
   neon: "linear-gradient(135deg, #12c2e9, #c471ed, #f64f59)",
-  royal: "linear-gradient(135deg, #141e30, #243b55)",
-  emerald: "linear-gradient(135deg, #43cea2, #185a9d)",
-  passion: "linear-gradient(135deg, #ff416c, #ff4b2b)",
-  dusk: "linear-gradient(135deg, #2c3e50, #4ca1af)",
-  candy: "linear-gradient(135deg, #ff61d2, #fe9090)",
-  mojito: "linear-gradient(135deg, #1d976c, #93f9b9)",
-}
+} as const
 
 export const cardStyles = {
-  glass: "bg-white/10 backdrop-blur-md border border-white/20",
-  solid: "bg-gray-900 border border-gray-800",
-  gradient: "bg-gradient-to-br from-purple-900/80 to-blue-900/80 border border-white/10",
-  minimal: "bg-black/50 backdrop-blur-sm border-none",
-  outline: "bg-transparent border-2 border-white/30",
-}
+  glass: "bg-white/10 backdrop-blur-sm border border-white/20",
+  solid: "bg-black/30",
+  gradient: "bg-gradient-to-r from-purple-500/20 to-indigo-500/20",
+  minimal: "bg-transparent border border-white/10",
+  outline: "border-2 border-white/20",
+} as const
 
-interface ThemeState {
-  background: string
+export interface ThemeState {
+  background: "solid" | "gradient" | "image"
   backgroundImage: string | null
   backgroundImageId: string | null
   gradientStyle: keyof typeof gradients
-  buttonStyle: string
+  buttonStyle: "rounded" | "pill" | "outline"
   cardStyle: keyof typeof cardStyles
-  animation: string
+  animation: "none" | "fade" | "scale" | "slide" | "bounce"
   opacity: number
   blurAmount: number
+  useCustomGradient: boolean
   customGradient: {
     color1: string
     color2: string
     angle: number
   }
-  useCustomGradient: boolean
 }
 
 const initialState: ThemeState = {
-  background: "solid",
+  background: "gradient",
   backgroundImage: null,
   backgroundImageId: null,
   gradientStyle: "midnight",
@@ -88,7 +82,13 @@ export const themeSlice = createSlice({
   },
 })
 
-export const { updateTheme, setBackgroundImage, setOpacity, setBlurAmount, setCustomGradient, toggleCustomGradient } =
-  themeSlice.actions
+export const { 
+  updateTheme, 
+  setBackgroundImage, 
+  setOpacity, 
+  setBlurAmount, 
+  setCustomGradient, 
+  toggleCustomGradient 
+} = themeSlice.actions
 
 export default themeSlice.reducer

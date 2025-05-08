@@ -121,10 +121,15 @@ function DashboardCard() {
     );
   }
 
-  const handleShare = async (userId: string, profileId: string, username: string) => {
+  const handleShare = async (e: React.MouseEvent, userId: string, profileId: string, username: string, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const protocol = window.location.protocol;
     const hostname = window.location.host;
-    const url = `${protocol}//${hostname}/${userId}_${profileId}`;
+    const url = slug 
+      ? `${protocol}//${hostname}/${slug}`
+      : `${protocol}//${hostname}/${userId}_${profileId}`;
     
     try {
       if (navigator.share) {
@@ -136,10 +141,13 @@ function DashboardCard() {
       } else {
         // Fallback for browsers that don't support Web Share API
         await navigator.clipboard.writeText(url);
-        // You might want to add a toast notification here
-        alert('Link copied to clipboard!');
+        alert(`Link copied to clipboard: ${url}`);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // User cancelled the share operation
+        return;
+      }
       console.error('Error sharing:', error);
     }
   };
@@ -147,41 +155,49 @@ function DashboardCard() {
   return (
     <div className="w-full flex flex-col items-center p-4">
       <div className="w-full max-w-4xl mx-auto">
-        <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible lg:snap-none">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {userDataList.map((userData, index) => {
             const profileId = userData.id;
             const handleCardClick = () => {
               const protocol = window.location.protocol;
               const hostname = window.location.host;
-              window.location.href = `${protocol}//${hostname}/${user.uid}_${profileId}`;
+              const url = userData.slug 
+                ? `${protocol}//${hostname}/${userData.slug}`
+                : `${protocol}//${hostname}/${user.uid}_${profileId}`;
+              window.location.href = url;
             };
+
             return (
               <div
                 key={userData.id || index}
-                className="min-w-[340px] max-w-sm lg:min-w-0 lg:max-w-none snap-center lg:snap-none flex-shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105"
+                className="w-full cursor-pointer transition-transform duration-300 hover:scale-105"
               >
-                <GlassCard className="overflow-hidden relative">
-                  {/* Add Share Button */}
-                  <motion.button
-                    className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent card click
-                      handleShare(user.uid, profileId, userData.username);
-                    }}
-                  >
-                    <Share2 className="w-5 h-5 text-white" />
-                  </motion.button>
+                <GlassCard className="overflow-hidden relative h-[500px]">
+                  {/* Share Button - Moved outside of clickable area */}
+                  <div className="absolute top-4 right-4 z-30">
+                    <motion.button
+                      className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleShare(e, user.uid, profileId, userData.username, userData.slug);
+                      }}
+                    >
+                      <Share2 className="w-5 h-5 text-white" />
+                    </motion.button>
+                  </div>
 
                   <motion.div
-                    className="relative w-full"
+                    className="relative w-full h-full flex flex-col items-center justify-center"
                     onClick={handleCardClick}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
                     style={getBackgroundStyle(userData.theme)}
                   >
+                    {/* Background layers */}
                     {userData.theme.background === "image" && userData.theme.backgroundImage && (
                       <>
                         <div
@@ -202,15 +218,14 @@ function DashboardCard() {
                     )}
 
                     <motion.div
-                      className="flex flex-col items-center gap-4 md:gap-6 p-6 md:p-8 relative"
-                      style={{ zIndex: 2 }}
+                      className="flex flex-col items-center gap-4 p-6 relative z-20 w-full max-w-xs mx-auto"
                       variants={container}
                       initial="hidden"
                       animate="show"
                     >
                       {userData.profileImage && (
                         <motion.div
-                          className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 md:border-4 border-white/30 shadow-xl relative"
+                          className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-xl relative"
                           variants={item}
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent z-10 pointer-events-none"></div>
@@ -224,10 +239,10 @@ function DashboardCard() {
                         </motion.div>
                       )}
 
-                      <motion.div className="text-center" variants={item}>
-                        <h2 className="text-xl md:text-2xl font-bold text-white drop-shadow-md">{userData.username}</h2>
+                      <motion.div className="text-center space-y-2" variants={item}>
+                        <h2 className="text-2xl font-bold text-white drop-shadow-md">{userData.username}</h2>
                         {userData.profession && (
-                          <p className="text-sm md:text-base text-gray-300 mt-1 font-medium tracking-wide">
+                          <p className="text-base text-gray-300 font-medium tracking-wide">
                             {userData.profession}
                           </p>
                         )}
@@ -235,7 +250,7 @@ function DashboardCard() {
 
                       {userData.bio && (
                         <motion.p
-                          className="text-center text-sm md:text-base text-gray-200 max-w-xs font-light leading-relaxed"
+                          className="text-center text-base text-gray-200 font-light leading-relaxed"
                           variants={item}
                         >
                           {userData.bio}
@@ -243,7 +258,7 @@ function DashboardCard() {
                       )}
 
                       {userData.socialHandles && userData.socialHandles.length > 0 && (
-                        <motion.div className="flex gap-4 md:gap-5 my-2 md:my-4" variants={item}>
+                        <motion.div className="flex gap-5 my-4" variants={item}>
                           {userData.socialHandles.map((handle, idx) => (
                             <motion.div
                               key={idx}
@@ -262,7 +277,7 @@ function DashboardCard() {
                       )}
 
                       {userData.links && userData.links.length > 0 && (
-                        <motion.div className="w-full space-y-3 md:space-y-4 my-2 md:my-4" variants={container}>
+                        <motion.div className="w-full space-y-4" variants={container}>
                           {userData.links.map((link) => (
                             <motion.div
                               key={link.id}

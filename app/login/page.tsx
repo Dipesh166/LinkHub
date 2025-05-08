@@ -31,7 +31,31 @@ export default function LoginPage() {
         router.push("/dashboard")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      // Handle specific Firebase auth errors
+      if (err instanceof Error) {
+        const errorCode = (err as any).code;
+        switch (errorCode) {
+          case 'auth/user-not-found':
+            setError("No account exists with this email. Please sign up first.");
+            break;
+          case 'auth/wrong-password':
+            setError("Incorrect password. Please try again.");
+            break;
+          case 'auth/invalid-email':
+            setError("Invalid email address.");
+            break;
+          case 'auth/weak-password':
+            setError("Password should be at least 6 characters.");
+            break;
+          case 'auth/email-already-in-use':
+            setError("An account already exists with this email.");
+            break;
+          default:
+            setError("An error occurred. Please try again.");
+        }
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   }
 

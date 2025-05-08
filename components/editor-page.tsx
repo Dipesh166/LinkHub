@@ -33,6 +33,7 @@ export default function EditorPage() {
           if (profile) {
             dispatch(setUserInfo({
               id: profileId,
+              slug: profile.slug,
               username: profile.username,
               bio: profile.bio || '',
               profession: profile.profession || '',

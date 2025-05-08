@@ -1,9 +1,11 @@
-import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, collectionGroup, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { nanoid } from 'nanoid';
 
 export interface UserData {
   id: string;
+  slug: string; // Add slug field
   username: string;
   bio: string;
   profession: string;
@@ -46,6 +48,7 @@ export async function getPublicPage(userId: string, profileId: string): Promise<
       const data = docSnap.data();
       return {
         id: profileId,
+        slug: data.slug,
         username: data.username || '',
         bio: data.bio || '',
         profession: data.profession || '',
@@ -105,8 +108,27 @@ export async function saveUserProfile(userId: string, newUserData: UserData) {
     const newProfileRef = doc(profilesRef);
     const profileId = newProfileRef.id;
 
+    // Generate random string using nanoid (3 characters)
+    const randomString = nanoid(3);
+    
+    // Generate slug (username-randomString)
+    const slug = `${newUserData.username}-${randomString}`.toLowerCase();
+
+    // Add slug to user data
+    const userDataWithSlug = {
+      ...newUserData,
+      slug: slug.toLowerCase(),
+      id: profileId
+    };
+
+    // Create a compound index for slug uniqueness check
+    const slugExists = await checkSlugExists(slug);
+    if (slugExists) {
+      throw new Error('This slug already exists. Please try again.');
+    }
+
     // Write the user data to Firestore
-    await setDoc(newProfileRef, newUserData);
+    await setDoc(newProfileRef, userDataWithSlug);
 
     return profileId;
   } catch (error) {
@@ -115,15 +137,89 @@ export async function saveUserProfile(userId: string, newUserData: UserData) {
   }
 }
 
-export async function updateProfiles(userId: string, profileId: string, updates: Partial<UserData>): Promise<boolean> {
+// Add new function to check slug uniqueness
+async function checkSlugExists(slug: string): Promise<boolean> {
   try {
-    if (!userId || !profileId) {
-      throw new Error('Invalid userId or profileId');
+    const usersRef = collection(db, "users");
+    const usersSnapshot = await getDocs(usersRef);
+
+    for (const userDoc of usersSnapshot.docs) {
+      const profilesRef = collection(db, "users", userDoc.id, "profiles");
+      const profilesSnapshot = await getDocs(
+        query(profilesRef, where("slug", "==", slug))
+      );
+
+      if (!profilesSnapshot.empty) {
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking slug existence:', error);
+    throw error;
+  }
+}
+
+// Add new function to get profile by slug
+export async function getPublicPageBySlug(slug: string): Promise<UserData | null> {
+  try {
+    // Normalize the slug to lowercase for consistent comparison
+    const normalizedSlug = slug.toLowerCase();
+    
+    // Create a collection group query to search across all profile subcollections
+    const profilesQuery = query(
+      collectionGroup(db, 'profiles'),
+      where('slug', '==', normalizedSlug),
+      limit(1)
+    );
+
+    const querySnapshot = await getDocs(profilesQuery);
+
+    if (querySnapshot.empty) {
+      return null;
     }
 
-    if (userId === profileId) {
-      throw new Error('Profile ID cannot be the same as User ID');
-    }
+    // Get the first (and should be only) matching document
+    const profileDoc = querySnapshot.docs[0];
+    const data = profileDoc.data();
+
+    return {
+      id: profileDoc.id,
+      slug: data.slug,
+      username: data.username || '',
+      bio: data.bio || '',
+      profession: data.profession || '',
+      profileImage: data.profileImage || null,
+      profileImageId: data.profileImageId || null,
+      socialHandles: data.socialHandles || [],
+      links: data.links || [],
+      theme: {
+        background: data.theme?.background || 'gradient',
+        backgroundImage: data.theme?.backgroundImage || null,
+        backgroundImageId: data.theme?.backgroundImageId || null,
+        gradientStyle: data.theme?.gradientStyle || 'midnight',
+        buttonStyle: data.theme?.buttonStyle || 'rounded',
+        cardStyle: data.theme?.cardStyle || 'glass',
+        animation: data.theme?.animation || 'none',
+        opacity: data.theme?.opacity ?? 0.7,
+        blurAmount: data.theme?.blurAmount ?? 0,
+        useCustomGradient: data.theme?.useCustomGradient || false,
+        customGradient: data.theme?.customGradient || {
+          color1: '#121063',
+          color2: '#1a0038',
+          angle: 135,
+        },
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching public page by slug:', error);
+    return null;
+  }
+}
+
+export async function updateProfiles(userId: string, profileId: string, updates: Partial<UserData>): Promise<boolean> {
+  try {
+    
 
     const profileRef = doc(db, `users/${userId}/profiles/${profileId}`);
     await setDoc(profileRef, updates, { merge: true });
@@ -132,7 +228,7 @@ export async function updateProfiles(userId: string, profileId: string, updates:
     console.error('Error updating profile:', error);
     throw error;
   }
-}
+} 
 
 export async function saveLinks(userId: string, profileId: string, links: Array<{ id: string; title: string; url: string; theme?: any }>) {
   try {
