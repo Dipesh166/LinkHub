@@ -18,7 +18,7 @@ export default function Header() {
 
   const handleGenerateLink = () => {
     if (username && user) {
-      // Just open the modal to show the preview link without storing it
+     
       dispatch(toggleModal())
     }
   }
@@ -65,7 +65,8 @@ export default function Header() {
               animate={{ opacity: 1 }}
               className="text-sm text-gray-400"
             >
-              {user.email}
+              {user.email?.substring(0,3)}...@
+              {user.email?.split('@')[1]}
             </motion.div>
           )}
 

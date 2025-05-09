@@ -6,11 +6,12 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from 'next/navigation';  // Fix: Import useRouter from next/navigation
 import { GlassCard } from "@/components/ui/glass-card";
 import SocialIcon from "@/components/social-icon";
 import LinkButton from "@/components/link-button";
 import { gradients } from "@/lib/features/themeSlice";
-import { Share2 } from 'lucide-react'; // Add this import at the top
+import { Share2 } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -45,12 +46,17 @@ interface UserData {
 
 function DashboardCard() {
   const [userDataList, setUserDataList] = useState<UserData[]>([]);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();  // Add loading state
+  const router = useRouter();  // Add router for navigation
 
   useEffect(() => {
     const fetchCollectionData = async () => {
+      if (loading) {
+        return; // Wait for auth to initialize
+      }
+
       if (!user) {
-        console.error('User not authenticated');
+        router.push('/login'); // Redirect to login if not authenticated
         return;
       }
 
@@ -68,7 +74,27 @@ function DashboardCard() {
     };
 
     fetchCollectionData();
-  }, [user]);
+  }, [user, loading, router]);
+
+  // Show loading state while authentication is being checked
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-white text-xl"
+        >
+          Loading...
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return null; // Return null as we're redirecting
+  }
 
   const getBackgroundStyle = (theme: UserData['theme']) => {
     if (theme.background === "image" && theme.backgroundImage) {
