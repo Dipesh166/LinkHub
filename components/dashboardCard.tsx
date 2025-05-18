@@ -12,6 +12,7 @@ import SocialIcon from "@/components/social-icon";
 import LinkButton from "@/components/link-button";
 import { gradients } from "@/lib/features/themeSlice";
 import { Share2 } from 'lucide-react';
+import Spinner from "@/components/ui/spinner";
 
 interface UserData {
   id: string;
@@ -80,13 +81,7 @@ function DashboardCard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-white text-xl"
-        >
-          Loading...
-        </motion.div>
+        <Spinner size={48} className="" />
       </div>
     );
   }
@@ -136,13 +131,7 @@ function DashboardCard() {
   if (userDataList.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-white text-xl"
-        >
-          Loading...
-        </motion.div>
+        <Spinner size={48} className="" />
       </div>
     );
   }

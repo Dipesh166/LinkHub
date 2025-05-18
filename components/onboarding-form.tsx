@@ -332,7 +332,7 @@ export default function OnboardingForm() {
                         type="text"
                         value={formData.username}
                         onChange={(e) =>
-                          handleChange("username", e.target.value)
+                          handleChange("username", e.target.value.replace(/\s+/g, "-") )
                         }
                         className="bg-black/30 border-white/20 text-white focus:ring-white/25 focus:border-white/40"
                         required
